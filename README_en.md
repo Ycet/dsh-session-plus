@@ -39,7 +39,7 @@ Session enhancement plugin: an "Open Workspace" button in the session header, th
 |---|---|
 | Floating button | Select any text in the chat message area — an "Add to conversation" pill appears centered above the selection; flips below when there's no room above |
 | Prepend insertion | Clicking inserts the text as a markdown code block (no language tag) at the **start** of the input; existing draft stays after it, separated by a blank line |
-| Adaptive fence | If the selected text contains ```, a longer fence (````) is used automatically so markdown stays intact |
+| Fixed triple-backtick fence | Always uses ``` (product requirement: only ``` is shown); text containing ``` inside the selection may affect that block's rendering — known limitation |
 | Standard toolbar behavior | Hides on outside click / Escape / collapsed selection / message-area scroll; after clicking, the selection clears, the button hides, and the input regains focus |
 | Scoped | Triggers only in the chat message area; selections in the input, sidebar, or settings never show it |
 | No length limit | Wraps the whole selection; label follows the UI locale |
@@ -86,7 +86,7 @@ After restart, open any session: the "Open Workspace" icon button appears at the
 - **Trigger**: drag-select text in the chat message area (assistant reply or user message); the "Add to conversation" button appears above the selection on release.
 - **Result**: clicking puts a ` ``` `-fenced code block at the **start** of the input; existing draft content stays after it (blank line separated).
 - **Dismiss**: outside click, Escape, collapsed selection, or scrolling the message area hides it; after clicking, the selection clears and the input regains focus.
-- **Edges**: selections inside the input / sidebar / settings never trigger; text containing triple backticks automatically gets a longer fence.
+- **Edges**: selections inside the input / sidebar / settings never trigger; the fence is always ``` — text containing triple backticks may break that block's markdown rendering (known limitation).
 
 ### Supported Scope
 
@@ -112,7 +112,7 @@ npm test
 
 - Host pure-function tests: platform command mapping, request trust checks, workspace path resolution, Windows exit-code tolerance.
 - Provider-label tests: display name priority / raw-id fallback / empty-state placeholder / tolerance for empty groups and names.
-- Code-block insertion tests: fence computation / prepend composition / empty draft / longer-fence upgrade on ```.
+- Code-block insertion tests: fence always ``` / prepend composition / empty draft / ``` inside text still uses ```.
 
 ## 🗂 Structure
 

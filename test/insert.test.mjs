@@ -3,18 +3,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { codeFence, prependCodeBlock } from "../lib/insert.js";
 
-test("codeFence：无反引号时返回三个反引号", () => {
+test("codeFence：恒为三个反引号（产品要求，不随文本升级）", () => {
+	assert.equal(codeFence(), "```");
 	assert.equal(codeFence("hello"), "```");
-	assert.equal(codeFence(""), "```");
-});
-
-test("codeFence：文本含三个反引号时升级为四个", () => {
-	assert.equal(codeFence("a ``` b"), "````");
-});
-
-test("codeFence：按最长连续反引号串加一", () => {
-	assert.equal(codeFence("``````"), "`".repeat(7));
-	assert.equal(codeFence("` `` `` `"), "```");
+	assert.equal(codeFence("a ``` b"), "```");
+	assert.equal(codeFence("``````"), "```");
 });
 
 test("prependCodeBlock：空草稿直接返回代码块", () => {
@@ -32,9 +25,9 @@ test("prependCodeBlock：多行选中文本原样保留", () => {
 	assert.equal(prependCodeBlock("", "a\nb\nc"), "```\na\nb\nc\n```");
 });
 
-test("prependCodeBlock：含围栏的文本使用更长围栏且渲染不破裂", () => {
-	assert.equal(prependCodeBlock("", "a ``` b"), "````\na ``` b\n````");
-	assert.equal(prependCodeBlock("rest", "a ``` b"), "````\na ``` b\n````\n\nrest");
+test("prependCodeBlock：含围栏的文本仍用三个反引号（渲染可能受影响，属已知限制）", () => {
+	assert.equal(prependCodeBlock("", "a ``` b"), "```\na ``` b\n```");
+	assert.equal(prependCodeBlock("rest", "a ``` b"), "```\na ``` b\n```\n\nrest");
 });
 
 test("prependCodeBlock：文本末尾紧跟换行时闭合围栏仍独立成行", () => {
