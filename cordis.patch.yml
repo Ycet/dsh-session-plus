@@ -1,12 +1,12 @@
-# dsh-open-workspace bundle patch
+# dsh-session-plus bundle patch
 #
 # This file is the `dsh.bundle.patch` layer of the published npm package: when
 # the plugin is installed through the official CLI —
 #
-#   dsh plugin --profile web add dsh-open-workspace@link:<源码绝对路径>
+#   dsh plugin --profile web add dsh-session-plus@link:<源码绝对路径>
 #
 # — the command reconciles `dsh.profile.bundles` against installed packages
-# and, seeing this declaration, appends `dsh-open-workspace` to the bundle
+# and, seeing this declaration, appends `dsh-session-plus` to the bundle
 # stack. The profile boot then merges THIS patch (a single `insert` of the
 # plugin row) like any bundle layer. One command installs and mounts.
 #
@@ -14,5 +14,5 @@
 # (lib/client.js) is discovered from the same package's `dsh.client`
 # declaration by the client-modules scan and composed into the page boot.
 - insert:
-    - id: open-workspace
-      name: 'dsh-open-workspace'
+    - id: session-plus
+      name: 'dsh-session-plus'

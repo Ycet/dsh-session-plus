@@ -1,4 +1,4 @@
-// dsh-open-workspace — host 纯函数单元测试（node:test）
+// dsh-session-plus — host 纯函数单元测试（node:test）
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
