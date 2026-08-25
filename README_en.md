@@ -1,6 +1,6 @@
 # dsh-session-plus
 
-Session enhancement plugin: an "Open Workspace" button in the session header plus the current model provider shown at the top of the model selection menu.
+Session enhancement plugin: an "Open Workspace" button in the session header, the current model provider at the top of the model selection menu, and one-click "Add to conversation" for selected text.
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![EN](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
@@ -32,6 +32,17 @@ Session enhancement plugin: an "Open Workspace" button in the session header plu
 | Empty state | Shows `—` before the directory reports a selection, then resolves automatically |
 | Bilingual copy | Follows the UI locale (中文 / English) |
 | Read-only, non-invasive | Pure display, non-interactive, never focusable; never touches the shipped menu's behavior or styles; the `/model` popup stays untouched |
+
+### 3️⃣ Selected Text → Add to Conversation
+
+| Feature | Description |
+|---|---|
+| Floating button | Select any text in the chat message area — an "Add to conversation" pill appears centered above the selection; flips below when there's no room above |
+| Prepend insertion | Clicking inserts the text as a markdown code block (no language tag) at the **start** of the input; existing draft stays after it, separated by a blank line |
+| Adaptive fence | If the selected text contains ```, a longer fence (````) is used automatically so markdown stays intact |
+| Standard toolbar behavior | Hides on outside click / Escape / collapsed selection / message-area scroll; after clicking, the selection clears, the button hides, and the input regains focus |
+| Scoped | Triggers only in the chat message area; selections in the input, sidebar, or settings never show it |
+| No length limit | Wraps the whole selection; label follows the UI locale |
 
 ## 🚀 Quick Start
 
@@ -70,6 +81,13 @@ After restart, open any session: the "Open Workspace" icon button appears at the
 - **Live**: switching models/providers while open refreshes the header immediately; closing the menu removes it, reopening re-injects it.
 - **No side effects**: model list scrolling, effort levels, and keyboard navigation are untouched; the `/model` popup is not injected.
 
+### Selected Text → Add to Conversation
+
+- **Trigger**: drag-select text in the chat message area (assistant reply or user message); the "Add to conversation" button appears above the selection on release.
+- **Result**: clicking puts a ` ``` `-fenced code block at the **start** of the input; existing draft content stays after it (blank line separated).
+- **Dismiss**: outside click, Escape, collapsed selection, or scrolling the message area hides it; after clicking, the selection clears and the input regains focus.
+- **Edges**: selections inside the input / sidebar / settings never trigger; text containing triple backticks automatically gets a longer fence.
+
 ### Supported Scope
 
 - DSH: `0.1.1-rc.2` (current web profile)
@@ -94,17 +112,19 @@ npm test
 
 - Host pure-function tests: platform command mapping, request trust checks, workspace path resolution, Windows exit-code tolerance.
 - Provider-label tests: display name priority / raw-id fallback / empty-state placeholder / tolerance for empty groups and names.
+- Code-block insertion tests: fence computation / prepend composition / empty draft / longer-fence upgrade on ```.
 
 ## 🗂 Structure
 
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js   # Browser half: button + toasts + model-menu provider header (single bundle)
+│   ├── client.js   # Browser half: button + toasts + provider header + selected-text add (single bundle)
 │   ├── index.js    # Host half: /session-plus/api open-workspace API + asset routes
+│   ├── insert.js   # Selected-text → code-block composition (unit-testable)
 │   └── label.js    # Provider-label pure function (unit-testable)
 ├── assets/icons/   # finder.png / folder.svg platform icons
-├── test/           # index.test.mjs (host) + label.test.mjs (pure)
+├── test/           # index / label / insert test suites
 ├── cordis.patch.yml
 └── package.json
 ```
