@@ -4,13 +4,13 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { openCommandFor, isTrustedRequest, resolveWorkspacePath, openInFileManager, assetFileFor } from "../lib/index.js";
+import { openCommandFor, isTrustedRequest, resolveWorkspacePath, openInFileManager, assetFileFor, powerShellEncoded, winOpenChain } from "../lib/index.js";
 
 const CWD = fileURLToPath(new URL("..", import.meta.url));
 
 test("openCommandFor 映射三个平台", () => {
 	assert.deepEqual(openCommandFor("darwin", "/a"), { command: "open", args: ["/a"] });
-	assert.deepEqual(openCommandFor("win32", "C:\\a"), { command: "explorer", args: ["C:\\a"] });
+	assert.deepEqual(openCommandFor("win32", "C:\\a"), winOpenChain("C:\\a")[0]);
 	assert.deepEqual(openCommandFor("linux", "/a"), { command: "xdg-open", args: ["/a"] });
 });
 
@@ -97,9 +97,9 @@ test("openInFileManager win32 退出码 1 但目录存在视为成功", async ()
 	assert.equal(await openInFileManager(CWD, "win32", runner), true);
 });
 
-test("openInFileManager win32 目录不存在时仍报错", async () => {
+test("openInFileManager win32 目录不存在时整链失败报错", async () => {
 	const runner = async () => { throw Object.assign(new Error("fail"), { code: 1 }); };
-	await assert.rejects(() => openInFileManager("/nonexistent/nope-xyz", "win32", runner), /打开目录失败（explorer）/);
+	await assert.rejects(() => openInFileManager("/nonexistent/nope-xyz", "win32", runner), /均未成功/);
 });
 
 test("assetFileFor 解析 finder.png 且文件存在", () => {
@@ -120,4 +120,47 @@ test("assetFileFor 未知文件名（含路径穿越尝试）抛错", () => {
 	assert.throws(() => assetFileFor("hack.png"), /unknown asset/);
 	assert.throws(() => assetFileFor("../lib/index.js"), /unknown asset/);
 	assert.throws(() => assetFileFor(""), /unknown asset/);
+});
+
+test("powerShellEncoded 编码往返可解码回 Start-Process 脚本（含中文与空格路径）", () => {
+	const encoded = powerShellEncoded("C:\\My Project\\01_dsh插件制作");
+	const decoded = Buffer.from(encoded, "base64").toString("utf16le");
+	assert.equal(decoded, "Start-Process 'C:\\My Project\\01_dsh插件制作'");
+});
+
+test("powerShellEncoded 路径含单引号转义为双单引号", () => {
+	const encoded = powerShellEncoded("C:\\it's dir");
+	const decoded = Buffer.from(encoded, "base64").toString("utf16le");
+	assert.equal(decoded, "Start-Process 'C:\\it''s dir'");
+});
+
+test("winOpenChain 按优先级返回 PowerShell → cmd → explorer", () => {
+	const chain = winOpenChain("C:\\a b");
+	assert.equal(chain.length, 3);
+	assert.deepEqual(chain[0], {
+		command: "powershell.exe",
+		args: ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", powerShellEncoded("C:\\a b")],
+	});
+	assert.deepEqual(chain[1], { command: "cmd.exe", args: ["/c", "start", "", "\"C:\\a b\""] });
+	assert.deepEqual(chain[2], { command: "explorer", args: ["C:\\a b"] });
+});
+
+test("openInFileManager win32 PowerShell 成功即返回且不再回退", async () => {
+	const calls = [];
+	const runner = async (command, args) => { calls.push({ command, args }); };
+	assert.equal(await openInFileManager(CWD, "win32", runner), true);
+	assert.equal(calls.length, 1);
+	assert.equal(calls[0].command, "powershell.exe");
+});
+
+test("openInFileManager win32 PowerShell 失败回退到 cmd 成功", async () => {
+	let n = 0;
+	const runner = async () => { n += 1; if (n === 1) throw new Error("ps failed"); };
+	assert.equal(await openInFileManager(CWD, "win32", runner), true);
+	assert.equal(n, 2);
+});
+
+test("openInFileManager win32 整链失败抛携因错误", async () => {
+	const runner = async () => { throw new Error("all fail"); };
+	await assert.rejects(() => openInFileManager(CWD, "win32", runner), /均未成功/);
 });

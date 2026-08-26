@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-plus",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "会话增强插件（原 dsh-open-workspace + dsh-model-provider-header 合并）：会话头部「打开工作区」按钮在系统文件管理器中打开当前工作区；模型选择菜单顶部展示当前模型提供商名称；聊天页选中文本可一键以代码块形式加入输入框开头。",
   "type": "module",
   "main": "lib/index.js",
