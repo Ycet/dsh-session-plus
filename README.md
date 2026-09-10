@@ -2,23 +2,28 @@
 
 # dsh-session-plus
 
-**会话增强插件：一键打开工作区 · 模型提供商菜单头部 · 选中文本加入对话**
+**会话增强插件：模型选择菜单顶部实时显示模型提供商 · 选中文本一键以代码块加入输入框**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![DSH](https://img.shields.io/badge/DSH-0.1.1--rc.2-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.3.0-blue?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?style=for-the-badge)
+![DSH](https://img.shields.io/badge/DSH-0.1.5--rc.1-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.4.0-blue?style=for-the-badge)
 
 </div>
 
-**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，为聊天会话页提供三项轻量增强：
+<!-- 预览图占位：补充截图 / GIF 后替换本注释，勿链接不存在的图片。
+<p align="center"><img src="docs/preview.gif" alt="dsh-session-plus 效果预览" width="720"></p>
+-->
 
-- 🗂 在系统文件管理器中**一键打开**当前会话的工作区目录
+**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，为聊天会话页提供两项轻量增强：
+
 - 🏷 模型选择菜单顶部**实时展示**当前请求使用的模型提供商
 - ✂️ 选中任意文本，一键以 Markdown 代码块形式**加入输入框开头**
+
+> [!NOTE]
+> **自 v0.4.0 起，「打开工作区」已从本插件移除。** DSH `0.1.5-rc.1` 已内置功能更完整的 **Open In…** 分体按钮（会话页头部右上角），可在已安装的目录应用中打开当前会话的 workspace；本插件不再重复提供该能力。变更细节见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 📑 目录
 
@@ -35,18 +40,7 @@
 
 ## ✨ 功能特性
 
-### 1️⃣ 一键打开工作区
-
-| 特性 | 说明 |
-|---|---|
-| 一键直达 | 会话页头部右上角新增图标按钮，位于 Session log 下载按钮左侧 |
-| 平台自适应图标 | macOS 显示 Finder 图标，Windows / Linux 显示文件夹图标（纯图标、无文字） |
-| 平台原生命令 | macOS `open` · Windows `explorer` · Linux `xdg-open` 兜底 |
-| 工作区口径准确 | 读取会话的 `session.header.cwd`，与会话 bash 工作目录完全一致 |
-| 结果反馈 | 仅失败时右下角 toast 说明原因；成功静默（文件管理器已打开即反馈） |
-| 安全防护 | host API 仅接受回环 / 受信主机 + 同源请求；浏览器仅传 sessionId，路径由服务端解析 |
-
-### 2️⃣ 模型提供商头部
+### 1️⃣ 模型提供商头部
 
 | 特性 | 说明 |
 |---|---|
@@ -57,7 +51,7 @@
 | 双语文案 | 随界面语言自动切换（简体中文 / English） |
 | 只读无侵扰 | 纯展示、不可交互、不可聚焦；不触碰自带菜单的行为与样式，`/model` 弹出选择器保持原样 |
 
-### 3️⃣ 选中文本 → 添加至对话
+### 2️⃣ 选中文本 → 添加至对话
 
 | 特性 | 说明 |
 |---|---|
@@ -105,9 +99,11 @@ npm exec @deepseek-ai/dsh web
 
 重启后打开任意会话：
 
-- 右上角出现「打开工作区」图标按钮（Session log 按钮左侧）
 - 点击输入框的模型选择按钮，菜单顶部显示当前提供商
 - 在消息区拖选文本，选区上方出现「添加至对话」
+
+> [!NOTE]
+> 会话页头部右上角若出现「Open In…」按钮，那是 **DSH 自带**能力，与本插件无关。
 
 ### 升级与回滚
 
@@ -128,14 +124,6 @@ dsh plugin --profile web remove dsh-session-plus
 ---
 
 ## 📖 使用说明
-
-### 打开工作区
-
-- **按钮位置**：会话页头部右上角工具区，紧邻 Session log 下载按钮左侧。
-- **图标语义**：macOS 显示访达风格图标；Windows / Linux 显示文件夹图标。
-- **成功**：不弹出提示——文件管理器已打开即视为反馈。
-- **失败**：右下角红色提示并说明原因（会话不存在、会话无工作区记录、工作区目录已被删除、命令失败等）。
-- **防抖**：请求进行中按钮禁用，避免重复弹出多个文件管理器窗口。
 
 ### 模型提供商头部
 
@@ -158,9 +146,9 @@ dsh plugin --profile web remove dsh-session-plus
 
 | 项目 | 范围 |
 |---|---|
-| DSH | `0.1.1-rc.2`（当前 web profile） |
-| 平台 | macOS / Windows（Linux 通过 `xdg-open` 兜底） |
-| 浏览器 | 本机现代 Chrome / Safari / Edge（浏览器与 `dsh web` 需在同一台机器上） |
+| DSH | `0.1.5-rc.1`（当前 web profile） |
+| 平台 | 无平台限制（宿主侧不再执行任何原生命令） |
+| 浏览器 | 现代 Chrome / Safari / Edge |
 
 ---
 
@@ -170,11 +158,12 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-共 **35 项**纯函数单元测试，全部通过：
+共 **20 项**单元测试，全部通过：
 
-- **host 侧**：平台命令映射、请求信任校验、工作区路径解析、Windows 退出码容错
 - **提供商名解析**：显示名优先 / 缺失回退原始 id / 空态占位符 / 空分组与空名称容错
 - **代码块插入**：围栏固定为 ```` ``` ```` / 开头拼接 / 空草稿 / 末尾空行幂等 / 含 ```` ``` ```` 文本仍用 ```` ``` ````
+- **宿主半区挂载**：导出面精确为 `name` + `apply`（空实现、不声明 `inject`）—— 守护「宿主行必须保留」
+- **浏览器半区注册面**：仅 `conversation.input.overlay` 两条注册、locale 剩 3 个键、词典与样式 effect 齐全，且会话头部与 `shell.overlay` 注册确已消失
 
 ---
 
@@ -183,13 +172,13 @@ npm test
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js   # 浏览器半区：打开工作区按钮 + toast + 提供商头部 + 选中添加（单 bundle）
-│   ├── index.js    # host 半区：/session-plus/api 打开工作区 API + 资产路由
+│   ├── client.js   # 浏览器半区：提供商头部 + 选中添加（单 bundle，2 条 overlay 注册）
+│   ├── index.js    # 宿主半区：刻意保留的空 apply（让浏览器半区被 dsh-client-modules 发现）
 │   ├── insert.js   # 选中文本 → 代码块拼接纯函数（可单测）
 │   └── label.js    # 提供商名解析纯函数（可单测）
-├── assets/icons/   # finder.png / folder.svg 平台图标
-├── test/           # index / label / insert 三组单测
+├── test/           # client / index / label / insert 四组单测
 ├── cordis.patch.yml
+├── CHANGELOG.md
 ├── package.json
 └── LICENSE
 ```
@@ -200,10 +189,10 @@ dsh-session-plus/
 
 | 类别 | 技术 |
 |---|---|
-| 运行时 | DeepSeek Harness（DSH `0.1.1-rc.2`）· Cordis 插件系统 |
+| 运行时 | DeepSeek Harness（DSH `0.1.5-rc.1`）· Cordis 插件系统 |
 | 语言 | 原生 JavaScript（ESM，无构建步骤） |
 | 浏览器侧 | DSH client runtime（`@deepseek-ai/dsh-client-*`），单 bundle 注入 |
-| 宿主侧 | `@deepseek-ai/dsh-native-command` 平台命令封装 |
+| 宿主侧 | 无运行时依赖：空 `apply` 宿主行，保留它是为了让浏览器半区被 `dsh-client-modules` 发现 |
 | 样式 | DSH 主题变量（`--dsw-alias-*`），零自定义样式表 |
 | 测试 | Node 内置测试运行器（`node --test`） |
 
@@ -211,11 +200,11 @@ dsh-session-plus/
 
 ## 🧭 路线图
 
-- [x] 一键打开工作区（平台原生命令 + 图标）
 - [x] 模型选择菜单提供商头部（实时跟随 + 双语文案）
 - [x] 选中文本 → 添加至对话（悬浮按钮 + 代码块插入）
 - [x] 触发范围限定（仅聊天页 + better-sidebar 右侧边栏）
 - [x] 插入结果末尾空行
+- [x] 移除「打开工作区」（DSH 已内置 Open In… 取代，见 [CHANGELOG.md](CHANGELOG.md)）
 - [ ] 选中文本内含围栏时的转义 / 容错处理
 - [ ] 插入位置可选（开头 / 末尾 / 光标处）
 

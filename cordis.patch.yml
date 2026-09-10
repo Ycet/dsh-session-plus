@@ -10,9 +10,17 @@
 # stack. The profile boot then merges THIS patch (a single `insert` of the
 # plugin row) like any bundle layer. One command installs and mounts.
 #
-# The row mounts the package's host half (lib/index.js); the browser half
-# (lib/client.js) is discovered from the same package's `dsh.client`
-# declaration by the client-modules scan and composed into the page boot.
+# The row mounts the package's host half (lib/index.js) — a deliberately EMPTY
+# apply, because the plugin's whole surface lives in the browser half. Keep this
+# row mountable and NOT disabled: dsh-client-modules only discovers a browser
+# half from host Loader entries that declare `dsh.client` AND own a fiber AND are
+# not disabled (its processOne skip branch: `entry.fiber === void 0 ||
+# entry.disabled`). Removing this row, disabling it, or letting it fail to build
+# a fiber silently kills the provider header and the "add to conversation"
+# features along with the empty apply it was meant to guard.
+#
+# The browser half (lib/client.js) is discovered from the same package's
+# `dsh.client` declaration by that scan and composed into the page boot.
 - insert:
     - id: session-plus
       name: 'dsh-session-plus'
