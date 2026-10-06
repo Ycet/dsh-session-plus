@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const CLIENT_PATH = fileURLToPath(new URL("../lib/client.js", import.meta.url));
 
 /** 在最小 stub 环境里加载 bundle 并执行 apply()，返回观测到的注册面。 */
-function loadClient() {
+function loadClient({ modelService = true } = {}) {
 	const source = readFileSync(CLIENT_PATH, "utf8");
 	let definition = null;
 	const windowStub = { __ModuleLoader__: { load: (def) => { definition = def; } } };
@@ -42,6 +42,8 @@ function loadClient() {
 		},
 		get: () => undefined,
 	};
+	ctx.inject = (_keys, fn) => { if (modelService) fn(ctx); };
+	ctx.modelDirectories = { directoryFor: () => null };
 	mod.apply(ctx);
 	return { definition, mod, seen };
 }
@@ -75,4 +77,9 @@ test("浏览器半区：会话头部与 shell.overlay 的注册已彻底移除",
 	for (const gone of ["shell.overlay", "conversation.session.header.utilities", "open-workspace"]) {
 		assert.equal(surface.includes(gone), false, `${gone} 不应再出现在注册面中`);
 	}
+});
+
+test("模型目录服务不存在时只降级提供商头部，选文功能仍注册", () => {
+	const { seen } = loadClient({ modelService: false });
+	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91]]);
 });

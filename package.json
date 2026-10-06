@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-plus",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "description": "会话增强插件：模型选择菜单顶部实时展示当前模型提供商名称；聊天页选中文本可一键以代码块形式加入输入框开头。",
   "type": "module",
   "main": "lib/index.js",
@@ -22,16 +22,17 @@
     },
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-slots"
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-model-selection"
       ],
       "platform": "web"
     }
   },
   "files": [
     "lib",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "README_en.md"
   ],
   "license": "MIT"
 }
