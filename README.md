@@ -2,14 +2,14 @@
 
 # dsh-session-plus
 
-**会话增强插件：模型选择菜单顶部实时显示模型提供商 · 选中文本一键以代码块加入输入框**
+**会话增强插件：模型选择菜单顶部实时显示模型提供商 · 选中文本一键以代码块加入输入框 · 账户菜单顶部三态主题快捷切换**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![DSH](https://img.shields.io/badge/DSH-0.2.0--rc.2-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.4.2-blue?style=for-the-badge)
+![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.5.0-blue?style=for-the-badge)
 
 </div>
 
@@ -17,10 +17,11 @@
 <p align="center"><img src="docs/preview.gif" alt="dsh-session-plus 效果预览" width="720"></p>
 -->
 
-**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，为聊天会话页提供两项轻量增强：
+**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供三项轻量增强：
 
 - 🏷 模型选择菜单顶部**实时展示**当前请求使用的模型提供商
 - ✂️ 选中任意文本，一键以 Markdown 代码块形式**加入输入框开头**
+- 🎚 账户菜单最上方提供 `跟随系统 / 浅色 / 深色` **主题快捷切换**（react-bits Rubber Segment 动效）
 
 > [!NOTE]
 > **自 v0.4.0 起，「打开工作区」已从本插件移除。** DSH `0.1.5-rc.1` 已内置功能更完整的 **Open In…** 分体按钮（会话页头部右上角），可在已安装的目录应用中打开当前会话的 workspace；本插件不再重复提供该能力。本插件继续保留提供商展示和选文插入功能。
@@ -77,6 +78,18 @@ flowchart LR
     H --> C
 ```
 
+### 3️⃣ 账户菜单主题快捷切换
+
+| 特性 | 说明 |
+|---|---|
+| 菜单最上方 | 在账户菜单（`设置` / `意见反馈` / `退出登录`）弹层顶部注入三态切换条，位于「设置」之上 |
+| 三态切换 | `跟随系统` / `浅色` / `深色`；与「设置 → 通用 → 外观」共用同一条偏好，任一处修改另一处即时同步 |
+| Rubber Segment | 还原 react-bits 橡胶滑块：跨段拉伸 → 收缩落位挤压，支持按住拖拽与甩动惯量；`prefers-reduced-motion` 下直接落位 |
+| 键鼠一致 | 方向键 / Home / End 切换；滑块刻意不使用 `button`，因此菜单原有的焦点与方向键序列完全不变 |
+| 不打断操作 | 点击或拖拽切换后菜单保持打开，可连续比较三种主题 |
+| 主题自适应 | 轨道、滑块与文字全部使用 DSH 主题 token，深浅色下与外层菜单同色阶 |
+| 安全降级 | 账户菜单由官方 `settings.launcher` 席位提供；席位或菜单结构不匹配时静默不注入，另两项功能照常 |
+
 ---
 
 ## 🚀 快速开始
@@ -90,7 +103,7 @@ dsh plugin --profile web add "dsh-session-plus@link:<absolute-path-to-plugin>"
 
 ### 桌面端安装
 
-当前版本：**v0.4.2**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
+当前版本：**v0.5.0**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
 
 ```bash
 "<path-to-desktop-cli>" plugin --profile desktop add "dsh-session-plus@link:<absolute-path-to-plugin>"
@@ -117,6 +130,7 @@ npm exec @deepseek-ai/dsh web
 
 - 点击输入框的模型选择按钮，菜单顶部显示当前提供商
 - 在消息区拖选文本，选区上方出现「添加至对话」
+- 点击左下角账号卡片，菜单最上方出现 `跟随系统 / 浅色 / 深色` 切换条
 
 > [!NOTE]
 > 会话页头部右上角若出现「Open In…」按钮，那是 **DSH 自带**能力，与本插件无关。
@@ -125,6 +139,8 @@ npm exec @deepseek-ai/dsh web
 
 <details>
 <summary>点击展开</summary>
+
+**v0.5.0**：新增账户菜单顶部三态主题快捷切换（react-bits Rubber Segment：拉伸跨段、落位挤压、拖拽橡皮筋与甩动惯量，支持减弱动效）；新增 `lib/rubber.js`、`lib/account-menu.js` 纯函数与对应单测；浏览器夹具适配当前桌面构建（动态解析官方前端入口标记、加载官方样式表、修复模型菜单夹具），并新增 7 项主题切换浏览器回归。
 
 **v0.4.2**：适配 DSH 桌面端 `0.2.0-rc.2` 的分层模型菜单和富文本输入框；限制 DOM 操作到所属会话，避免主会话与侧会话串用提供商或草稿。修复同一位置重新选中及滚动后按钮不恢复，支持官方右侧栏预览，清理卸载后的菜单头部与监听器。
 
@@ -160,12 +176,21 @@ dsh plugin --profile web remove dsh-session-plus
 > [!NOTE]
 > 围栏一律为三个反引号。选中文本本身含三个反引号时，可能影响该代码块在 Markdown 中的渲染，属已知限制。
 
+### 主题快捷切换
+
+- **位置**：左下角账户菜单弹层最上方（点击左下角账号卡片展开）。
+- **状态**：`跟随系统`（默认，随操作系统深浅色自动变化）/ `浅色` / `深色`；与「设置 → 通用 → 外观」是同一个偏好，任一处修改另一处即时同步。
+- **操作**：点击分段、方向键 / Home / End，或按住滑块拖拽后松手（松手才落定，避免拖动过程中反复写入偏好与整页重绘）。
+- **不打断**：切换后菜单保持打开，可连续比较三种主题。
+- **边界**：账户菜单由官方 `settings.launcher` 席位提供；若该席位被第三方侧边栏接管、或 DSH 改动了菜单结构，切换条会静默不出现（不影响提供商头部与选文插入）。
+
 ### 支持范围
 
 | 项目 | 范围 |
 |---|---|
-| DSH | 桌面 `0.2.0-rc.2`；保留旧版 Web 的 `menu` / textarea 接口兼容 |
+| DSH | 桌面 `0.2.1-rc.2`；保留旧版 Web 的 `menu` / textarea 接口兼容 |
 | 平台 | 官方桌面前端由浏览器夹具验证；Windows 原生桌面未实测 |
+| 主题切换 | 依赖官方 `settings.launcher` 席位与 `role="menu"` 弹层结构，结构变化时静默降级 |
 | 浏览器 | 现代 Chrome / Safari / Edge |
 
 ---
@@ -176,7 +201,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-共 **21 项单元测试 + 6 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 6 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
+共 **39 项单元测试 + 13 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 13 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -185,13 +210,25 @@ SESSION_PLUS_TEST_BROWSER="<path-to-chromium-executable>" \
 node --test test/*.test.mjs
 ```
 
+<details>
+<summary>如何准备 <code>&lt;path-to-extracted-desktop-dsh&gt;</code></summary>
+
+夹具只读取两个包：`@deepseek-ai/dsh-web-frontend`（官方前端入口与样式表）和 `@deepseek-ai/dsh-client-ui-model-selection`（模型菜单组件）。从桌面应用 `Contents/Resources/app.asar` 中解出 `dsh/node_modules/@deepseek-ai/` 下对应目录即可，解包后布局需为 `<runtime>/node_modules/@deepseek-ai/dsh-web-frontend/dist/assets/index-*.js`。
+
+`app.asar` 数据区起点 = `8 + readUInt32LE(4)`（不是 `16 + readUInt32LE(12)`，后者会让每个文件多出 1~2 字节偏移）。官方样式表必须一并注入页面，Menu 的 `position: fixed` 与主题 token 都来自它，否则弹层会退化为文档流、菜单几何反查失效。
+
+</details>
+
 测试覆盖：
 
 - **提供商名解析**：显示名优先 / 缺失回退原始 id / 空态占位符 / 空分组与空名称容错
 - **代码块插入**：围栏固定为 ```` ``` ```` / 开头拼接 / 空草稿 / 末尾空行幂等 / 含 ```` ``` ```` 文本仍用 ```` ``` ````
 - **宿主半区挂载**：导出面精确为 `name` + `apply`（空实现、不声明 `inject`）—— 守护「宿主行必须保留」
+- **Rubber Segment 数学**：橡皮筋阻尼 / 速度投影 / 采样窗口 / 最近段判定 / 拉伸与挤压方向 / 缓动曲线
+- **账户菜单锚定**：侧上落点、视口夹紧、4px 容差内接受与超出拒绝、插入后自校正
 - **浏览器运行时**：官方模型菜单、实时目录更新、多会话隔离、富文本 / textarea 焦点恢复、选区重显、侧栏与编辑区边界、Windows 标题栏避让与卸载清理
-- **浏览器半区注册面**：`conversation.input.overlay` 两条注册、词典与样式 effect、模型服务缺失时选文功能仍注册
+- **主题切换（真实 Menu 原语）**：注入位置与面板贴合、点击只写一次且菜单不关、拖拽单次落定、方向键与焦点、关闭清理与重开回显、外部改主题跟随、减弱动效直接落位、其它弹层不误注入
+- **浏览器半区注册面**：`conversation.input.overlay` 两条注册、词典与样式 effect、模型服务 / 主题服务缺失时的降级
 
 ---
 
@@ -200,12 +237,15 @@ node --test test/*.test.mjs
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js   # 浏览器半区：提供商头部 + 选中添加（单 bundle，2 条 overlay 注册）
-│   ├── index.js    # 宿主半区：刻意保留的空 apply（让浏览器半区被 dsh-client-modules 发现）
-│   ├── insert.js   # 选中文本 → 代码块拼接纯函数（可单测）
-│   └── label.js    # 提供商名解析纯函数（可单测）
-├── test/           # client / index / label / insert 单元测试与官方前端浏览器夹具
+│   ├── client.js        # 浏览器半区：提供商头部 + 选中添加 + 主题切换（单 bundle）
+│   ├── index.js         # 宿主半区：刻意保留的空 apply（让浏览器半区被 dsh-client-modules 发现）
+│   ├── insert.js        # 选中文本 → 代码块拼接纯函数（可单测）
+│   ├── label.js         # 提供商名解析纯函数（可单测）
+│   ├── rubber.js        # Rubber Segment 几何与动效数学（可单测）
+│   └── account-menu.js  # 账户菜单落点识别纯几何（可单测）
+├── test/                # 单元测试与官方前端浏览器夹具
 ├── cordis.patch.yml
+├── CHANGELOG.md
 ├── package.json
 └── LICENSE
 ```
@@ -233,6 +273,7 @@ dsh-session-plus/
 - [x] 桌面富文本输入框、分层模型菜单与多会话隔离
 - [x] 插入结果末尾空行
 - [x] 移除「打开工作区」（DSH 已内置 Open In… 取代，保留另外两项功能）
+- [x] 账户菜单主题快捷切换（Rubber Segment、拖拽惯量、减弱动效）
 - [ ] 选中文本内含围栏时的转义 / 容错处理
 - [ ] 插入位置可选（开头 / 末尾 / 光标处）
 

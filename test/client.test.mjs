@@ -1,7 +1,8 @@
 // dsh-session-plus — 浏览器半区注册面回归测试（node:test）
 //
-// 守护「只移除打开工作区，不破坏另外两项功能」：在最小 stub 环境里加载
-// lib/client.js（ModuleLoader bundle）并真正执行一次 apply()，把注册面固定下来。
+// 守护「只移除打开工作区，不破坏另外两项功能」，并在 v0.5.0 后同时守护新增的
+// 第三项功能（账户菜单主题切换）：在最小 stub 环境里加载 lib/client.js
+// （ModuleLoader bundle）并真正执行一次 apply()，把注册面固定下来。
 // 任何误删共享基建（locale 词典键、conversation.input.overlay 席位、样式 effect、
 // 客户端 inject）都会在这里失败；被移除功能的注册点若复活同样会失败。
 import { test } from "node:test";
@@ -12,7 +13,7 @@ import { fileURLToPath } from "node:url";
 const CLIENT_PATH = fileURLToPath(new URL("../lib/client.js", import.meta.url));
 
 /** 在最小 stub 环境里加载 bundle 并执行 apply()，返回观测到的注册面。 */
-function loadClient({ modelService = true } = {}) {
+function loadClient({ modelService = true, themeService = true } = {}) {
 	const source = readFileSync(CLIENT_PATH, "utf8");
 	let definition = null;
 	const windowStub = { __ModuleLoader__: { load: (def) => { definition = def; } } };
@@ -29,12 +30,14 @@ function loadClient({ modelService = true } = {}) {
 	const seen = { effects: [], slotInjects: [], registrations: [], locales: [] };
 	const ctx = {
 		effect: (fn, name) => { seen.effects.push(name); return fn(); },
+		on: () => () => {},
 		locale: {
 			register: (ns, dicts) => {
 				seen.locales.push([ns, Object.keys(dicts.zh).sort(), Object.keys(dicts.en).sort()]);
 				return () => {};
 			},
 			bind: () => () => "",
+			subscribe: () => () => {},
 		},
 		slots: {
 			inject: (name, fn) => { seen.slotInjects.push(name); return fn(); },
@@ -42,8 +45,13 @@ function loadClient({ modelService = true } = {}) {
 		},
 		get: () => undefined,
 	};
-	ctx.inject = (_keys, fn) => { if (modelService) fn(ctx); };
+	ctx.inject = (keys, fn) => {
+		// 主题切换按服务可用性装配：服务缺失时整条功能不部署（另两项功能不受影响）。
+		if (Array.isArray(keys) && keys.includes("theme")) { if (themeService) fn(ctx); return; }
+		if (modelService) fn(ctx);
+	};
 	ctx.modelDirectories = { directoryFor: () => null };
+	ctx.theme = { getTheme: () => ({ preference: "system" }), setTheme: () => {} };
 	mod.apply(ctx);
 	return { definition, mod, seen };
 }
@@ -55,7 +63,7 @@ test("浏览器半区：bundle id 与客户端 inject 保持不变", () => {
 	assert.equal(typeof mod.apply, "function");
 });
 
-test("浏览器半区：仅剩 conversation.input.overlay 两条注册（功能二、三的席位）", () => {
+test("浏览器半区：仅剩 conversation.input.overlay 两条注册（功能一、二的席位）", () => {
 	const { seen } = loadClient();
 	assert.deepEqual(seen.slotInjects, ["conversation.input.overlay", "conversation.input.overlay"]);
 	assert.deepEqual(seen.registrations, [
@@ -64,10 +72,24 @@ test("浏览器半区：仅剩 conversation.input.overlay 两条注册（功能�
 	]);
 });
 
-test("浏览器半区：locale 词典与样式 effect 未被破坏", () => {
+test("浏览器半区：locale 词典、样式 effect 与主题切换 effect 均已装配", () => {
 	const { seen } = loadClient();
-	assert.deepEqual(seen.effects, ["dsh-session-plus: dictionaries", "dsh-session-plus: styles"]);
-	const expected = ["addToConversation", "providerEntry", "providerLabel"];
+	assert.deepEqual(seen.effects, [
+		"dsh-session-plus: dictionaries",
+		"dsh-session-plus: styles",
+		"dsh-session-plus: theme switcher",
+	]);
+	const expected = [
+		"addToConversation",
+		"providerEntry",
+		"providerLabel",
+		"themeDark",
+		"themeGroup",
+		"themeLight",
+		"themeSwitchHint",
+		"themeSystem",
+		"themeUnavailable",
+	];
 	assert.deepEqual(seen.locales, [["sessionPlus", expected, expected]]);
 });
 
@@ -82,4 +104,13 @@ test("浏览器半区：会话头部与 shell.overlay 的注册已彻底移除",
 test("模型目录服务不存在时只降级提供商头部，选文功能仍注册", () => {
 	const { seen } = loadClient({ modelService: false });
 	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91]]);
+});
+
+test("主题服务不存在时整条主题切换不装配，另两项功能不受影响", () => {
+	const { seen } = loadClient({ themeService: false });
+	assert.deepEqual(seen.effects, ["dsh-session-plus: dictionaries", "dsh-session-plus: styles"]);
+	assert.deepEqual(seen.registrations, [
+		["conversation.input.overlay", "provider-header", 90],
+		["conversation.input.overlay", "selection-add", 91],
+	]);
 });
