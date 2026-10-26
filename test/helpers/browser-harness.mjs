@@ -84,20 +84,56 @@ export async function browserHarness() {
         set(next) { value = next; for (const fn of listeners) fn(); }, listeners };
     };
     const registrations = new Map(), disposers = [];
+    /** 功能 4（推理等级滑条）的写回记录：每次 directory.select 的入参都收在这里。 */
+    const selects = [];
+    const directoryCache = new Map();
     const input = new Map(), directories = new Map();
     const ctx = {
       effect(fn) { const cleanup = fn(); if (cleanup) disposers.push(cleanup); },
       inject(_keys, fn) { fn(ctx); },
-      locale: { register() { return () => {}; }, bind: () => key => key === 'providerLabel' ? '提供商：{name}' : key === 'addToConversation' ? '添加至对话' : key },
+      locale: { register() { return () => {}; }, bind: () => key => ({
+        providerLabel: '提供商：{name}',
+        addToConversation: '添加至对话',
+        effortSliderLabel: '推理等级',
+        effortSliderTitle: '推理等级：{name}',
+        effortErrorNotReady: '模型目录尚未就绪，无法写入档位',
+        effortErrorDirectory: '模型目录不可用，档位未写入',
+        effortErrorTimeout: '档位切换超时，宿主未回报结果（已回滚显示）',
+        effortErrorFailed: '档位切换失败',
+      }[key] ?? key) },
       slots: { inject(_name, fn) { fn(); }, register(spec, Component) { registrations.set(spec.id, { spec, Component }); return () => registrations.delete(spec.id); } },
-      modelDirectories: { directoryFor(id) { return { store: directories.get(id) }; } },
+      modelDirectories: {
+        directoryFor(id) {
+          // 同一会话必须返回**同一个对象**：滑条按身份比较决定是否重挂订阅。
+          if (!directoryCache.has(id)) {
+            directoryCache.set(id, {
+              store: directories.get(id),
+              load() { return Promise.resolve(directories.get(id).getSnapshot()); },
+              select(selection) {
+                selects.push(selection);
+                const snapshot = directories.get(id).getSnapshot();
+                directories.get(id).set({ ...snapshot, current: { ...snapshot.current, reasoningEffort: selection.reasoningEffort } });
+                return Promise.resolve({ ok: true });
+              },
+            });
+          }
+          return directoryCache.get(id);
+        },
+      },
       get(name) { return ctx[name]; },
     };
     modules.get('dsh-session-plus').apply(ctx);
     const ModelSelect = modules.get('@deepseek-ai/dsh-client-ui-model-selection').ModelSelect;
     const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
-    const state = provider => ({ current: { provider, model: 'test' }, groups: [{ id: provider, name: provider.toUpperCase(), models: [{ id: 'test', name: 'Test model' }] }], failures: [], pending: null, status: 'ready', retainedEffort: undefined });
+    const EFFORTS = [{ id: 'off', name: 'Off' }, { id: 'low', name: 'Low' }, { id: 'high', name: 'High' }, { id: 'max', name: 'Max' }];
+    // reasoning 为 null 时模拟"该模型没有推理档位"，用于验证滑条 fail-open（不注入）。
+    const state = (provider, reasoning = { defaultEffort: 'high', efforts: EFFORTS }) => ({
+      current: { provider, model: 'test' },
+      groups: [{ id: provider, name: provider.toUpperCase(), models: [{ id: 'test', name: 'Test model', ...(reasoning === null ? {} : { reasoning }) }] }],
+      failures: [], pending: null, status: 'ready', retainedEffort: undefined,
+    });
     const modelText = key => ({ 'menu.model': '模型', 'menu.effort': '推理等级', 'trigger.aria': 'Test model', 'menu.aria': '模型选择' }[key] ?? key);
+    const bySlot = slotName => [...registrations.values()].filter(entry => entry.spec.name === slotName);
     function Composer({ id, legacy }) {
       const inputStore = input.get(id);
       const useInput = selector => selector(React.useSyncExternalStore(inputStore.subscribe, inputStore.getSnapshot));
@@ -106,13 +142,15 @@ export async function browserHarness() {
         h('div', { 'data-conversation-scroll': '', style: { minHeight: '260px', paddingTop: '100px' } },
           h('p', { id: `${id}-message` }, `${id} 消息文本`),
           h('div', { 'data-slot': 'conversation.composer.bar', 'data-composer-card': '' },
-            h('div', { 'data-slot': 'conversation.input.overlay' }, [...registrations.values()].map(({ spec, Component }) =>
+            h('div', { 'data-slot': 'conversation.input.overlay' }, bySlot('conversation.input.overlay').map(({ spec, Component }) =>
+              h(Component, { ...spec.inject?.(id), key: spec.id, sessionId: id, useInput, inputActions }))),
+            h('div', { 'data-slot': 'conversation.input.right' }, bySlot('conversation.input.right').map(({ spec, Component }) =>
               h(Component, { ...spec.inject?.(id), key: spec.id, sessionId: id, useInput, inputActions }))),
             legacy ? h('textarea', { id: `${id}-input`, defaultValue: '草稿' }) : h('div', { id: `${id}-input`, 'data-composer-input': '', contentEditable: true, suppressContentEditableWarning: true }, '草稿'),
             h('div', { 'data-slot': 'conversation.input.model' }, h(ModelSelect, { available: true, locked: false, directory: directories.get(id), load() {}, select() { return Promise.resolve({ ok: true }); }, t: modelText, renderSlot: () => null })))));
     }
     window.fixture = {
-      input, directories, errors: [],
+      input, directories, errors: [], selects,
       render(ids = ['main'], legacy = false) {
         for (const id of ids) { if (!input.has(id)) input.set(id, store({ draft: '原有草稿' })); if (!directories.has(id)) directories.set(id, store(state(id))); }
         builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null, ids.map(id => h(Composer, { key: id, id, legacy })))));
@@ -123,6 +161,8 @@ export async function browserHarness() {
         document.dispatchEvent(new Event('selectionchange'));
       },
       setProvider(id, provider) { directories.get(id).set(state(provider)); },
+      /** 切换当前模型是否带推理档位（reasoning = null 表示没有）。 */
+      setReasoning(id, reasoning = null) { directories.get(id).set(state('deepseek', reasoning === null ? null : { defaultEffort: 'high', efforts: reasoning })); },
       unmount() { builtins['react-dom'].flushSync(() => root.unmount()); for (const dispose of disposers.reverse()) dispose(); },
     };
     window.fixture.render();

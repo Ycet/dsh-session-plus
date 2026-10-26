@@ -63,12 +63,17 @@ test("浏览器半区：bundle id 与客户端 inject 保持不变", () => {
 	assert.equal(typeof mod.apply, "function");
 });
 
-test("浏览器半区：仅剩 conversation.input.overlay 两条注册（功能一、二的席位）", () => {
+test("浏览器半区：四项功能各自的插槽注册齐全", () => {
 	const { seen } = loadClient();
-	assert.deepEqual(seen.slotInjects, ["conversation.input.overlay", "conversation.input.overlay"]);
+	assert.deepEqual(seen.slotInjects, [
+		"conversation.input.overlay",
+		"conversation.input.overlay",
+		"conversation.input.right",
+	]);
 	assert.deepEqual(seen.registrations, [
 		["conversation.input.overlay", "provider-header", 90],
 		["conversation.input.overlay", "selection-add", 91],
+		["conversation.input.right", "codex-effort-slider", 40],
 	]);
 });
 
@@ -78,9 +83,16 @@ test("浏览器半区：locale 词典、样式 effect 与主题切换 effect 均
 		"dsh-session-plus: dictionaries",
 		"dsh-session-plus: styles",
 		"dsh-session-plus: theme switcher",
+		"dsh-session-plus: effort slider",
 	]);
 	const expected = [
 		"addToConversation",
+		"effortErrorDirectory",
+		"effortErrorFailed",
+		"effortErrorNotReady",
+		"effortErrorTimeout",
+		"effortSliderLabel",
+		"effortSliderTitle",
 		"providerEntry",
 		"providerLabel",
 		"themeDark",
@@ -106,11 +118,41 @@ test("模型目录服务不存在时只降级提供商头部，选文功能仍�
 	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91]]);
 });
 
-test("主题服务不存在时整条主题切换不装配，另两项功能不受影响", () => {
+test("主题服务不存在时整条主题切换不装配，其余功能不受影响", () => {
 	const { seen } = loadClient({ themeService: false });
-	assert.deepEqual(seen.effects, ["dsh-session-plus: dictionaries", "dsh-session-plus: styles"]);
+	assert.deepEqual(seen.effects, [
+		"dsh-session-plus: dictionaries",
+		"dsh-session-plus: styles",
+		"dsh-session-plus: effort slider",
+	]);
 	assert.deepEqual(seen.registrations, [
 		["conversation.input.overlay", "provider-header", 90],
 		["conversation.input.overlay", "selection-add", 91],
+		["conversation.input.right", "codex-effort-slider", 40],
 	]);
+});
+
+test("模型目录服务不存在时滑条与提供商头部都不装配，选文与主题切换照常", () => {
+	const { seen } = loadClient({ modelService: false });
+	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91]]);
+	assert.deepEqual(seen.effects, [
+		"dsh-session-plus: dictionaries",
+		"dsh-session-plus: styles",
+		"dsh-session-plus: theme switcher",
+	]);
+});
+
+test("v0.6.0 迁入的滑条不含被移除的设置面板与本地存储", () => {
+	const { mod } = loadClient();
+	const vendor = mod.__effortSlider;
+	assert.equal(typeof vendor, "object", "必须导出 __effortSlider 供离线测试使用");
+	const removed = ["writeSettings", "normalizeSettings", "schemaDefaults", "dumpTrace", "traceClear", "installSettingsUi", "openSettingsPanel", "SETTINGS_SCHEMA", "SETTINGS_KEY", "SETTINGS_EVENT"];
+	assert.deepEqual(Object.keys(vendor).filter((key) => removed.includes(key)), [], "被移除的设置/诊断接缝不得再导出");
+	const source = readFileSync(CLIENT_PATH, "utf8");
+	// 设置面板与本地存储整段不迁移：这些标识符不得再出现。
+	for (const gone of ["localStorage", "滑条设置", "复制诊断", "SETTINGS_SCHEMA", "openSettingsPanel", "ces-set__"]) {
+		assert.equal(source.includes(gone), false, `${gone} 不应再出现在产物里`);
+	}
+	// 但必须保留「右键不弹面板」的拦截器：旧版本残留的 document 级监听不得把面板弹到我们滑条上。
+	assert.ok(source.includes("stopImmediatePropagation"), "需要 window 捕获阶段的右键拦截器");
 });

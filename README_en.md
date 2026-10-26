@@ -2,14 +2,14 @@
 
 # dsh-session-plus
 
-**Session enhancement plugin: live model provider in the model menu · turn selected text into a code block at the start of the input · three-state theme switch at the top of the account menu**
+**Session enhancement plugin: live model provider in the model menu · turn selected text into a code block at the start of the input · three-state theme switch at the top of the account menu · Codex-style reasoning-effort slider in the official model menu**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.5.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.6.0-blue?style=for-the-badge)
 
 </div>
 
@@ -17,11 +17,12 @@
 <p align="center"><img src="docs/preview.gif" alt="dsh-session-plus preview" width="720"></p>
 -->
 
-**dsh-session-plus** is a session enhancement plugin for [DeepSeek Harness](https://github.com/deepseek-ai) (DSH) that adds three lightweight boosts:
+**dsh-session-plus** is a session enhancement plugin for [DeepSeek Harness](https://github.com/deepseek-ai) (DSH) that adds four lightweight boosts:
 
 - 🏷 **Show** the active model provider at the top of the model selection menu, in real time
 - ✂️ Turn any selected text into a Markdown code block, **prepended** to the input, with one click
 - 🎚 A `System / Light / Dark` **theme shortcut** at the very top of the account menu (react-bits Rubber Segment motion)
+- 🎛 A **Codex-style continuous slider** replacing the official `Reasoning effort` row (per-level colours plus a max-level energy layer, ported from `dsh-codex-effort-slider`)
 
 > [!NOTE]
 > **As of v0.4.0, "Open Workspace" has been removed from this plugin.** DSH `0.1.5-rc.1` ships a richer built-in **Open In…** split button (top-right of the session header) that opens the session workspace in an installed directory app, so this plugin no longer duplicates it. The provider header and selection insertion remain available.
@@ -90,6 +91,20 @@ flowchart LR
 | Theme-aware | Track, thumb, and labels use DSH theme tokens only, matching the surrounding menu in both palettes |
 | Safe fallback | The account menu comes from the official `settings.launcher` seat; when the seat or the menu structure does not match, the switch is silently skipped and the other two features keep working |
 
+### 4️⃣ Reasoning-Effort Slider
+
+| Feature | Description |
+|---|---|
+| No new entry point | Reworks the official `Reasoning effort` row itself: taller, wrapping, with the slider filling a second line; the official label / value / chevron are left untouched |
+| Continuous drag | Levels change while you drag (no waiting for release); release projects the pointer velocity and snaps to the nearest level; level count adapts per model (2 / 4 / 6) |
+| One colour per level | The fill runs from blue to violet, energising towards the right; the top level lights up a violet energy layer, a sweep, and 22 starfield particles, and the row gets a violet outline |
+| Seat in sync | The effort text on the composer model button and the row value are tinted per level; the `Off` level keeps the official grey |
+| Reliable writes | `directory.select({ provider, model, reasoningEffort })` with same-level dedupe, in-flight merge, 120 ms throttling, and a 10 s timeout rollback; failures show an inline message instead of pretending to succeed |
+| Motion profile | Fixed to the upstream `full` motion and **unaffected by the OS reduce-motion setting**; ticks fixed to `highlight reached levels` |
+| No settings panel | This plugin has no settings panel: right-click, long-press, and the context-menu key never open a popup. A window-capture guard also stops document-level listeners left over from the previous version from opening theirs |
+| Safe fallback | When the official row, the model effort levels, or the session directory is missing, nothing happens and the official menu stays as-is |
+| Attribution | Ported from MIT-licensed `dsh-codex-effort-slider@1.1.3`; see [NOTICE.md](NOTICE.md) for provenance and the exact changes |
+
 ---
 
 ## 🚀 Quick Start
@@ -103,7 +118,7 @@ dsh plugin --profile web add "dsh-session-plus@link:<absolute-path-to-plugin>"
 
 ### Desktop installation
 
-Current version: **v0.5.0**. Fully quit DeepSeek Harness, then use its bundled CLI to install into the reserved `desktop` profile. The older Web CLI cannot manage that profile.
+Current version: **v0.6.0**. Fully quit DeepSeek Harness, then use its bundled CLI to install into the reserved `desktop` profile. The older Web CLI cannot manage that profile.
 
 ```bash
 "<path-to-desktop-cli>" plugin --profile desktop add "dsh-session-plus@link:<absolute-path-to-plugin>"
@@ -139,6 +154,8 @@ After restart, open any session:
 
 <details>
 <summary>Expand</summary>
+
+**v0.6.0**: adds a Codex-style slider for the official `Reasoning effort` row (ported from the MIT-licensed `dsh-codex-effort-slider@1.1.3`: continuous drag, one colour per level, max-level energy layer with starfield, seat tinting, dedupe plus timeout rollback), along with an offline harness with 10 behaviour assertions, 6 real-`ModelSelect` browser cases, and `NOTICE.md` for upstream attribution.
 
 **v0.5.0**: adds a three-state theme shortcut at the top of the account menu (react-bits Rubber Segment: stretch across slots, landing squash, drag rubber band and flick momentum, reduced-motion aware). Adds the `lib/rubber.js` and `lib/account-menu.js` pure modules with unit tests, adapts the browser fixtures to the current desktop build (dynamic detection of the official frontend entry markers, loading the official stylesheets, fixing the model-menu fixture), and adds 7 browser regressions for the theme switch.
 
@@ -184,6 +201,14 @@ dsh plugin --profile web remove dsh-session-plus
 - **Non-interrupting**: the menu stays open after switching, so you can compare the three themes.
 - **Edges**: the account menu is provided by the official `settings.launcher` seat; if a third-party sidebar takes that seat over, or DSH changes the menu structure, the switch silently does not appear (the provider header and selection insertion are unaffected).
 
+### Reasoning-Effort Slider
+
+- **Position**: open the model menu under the composer; the `Reasoning effort` row gains a slider underneath it (the row grows taller because of it).
+- **Interaction**: hold and drag the track — the level changes as you drag. On release the pointer velocity is projected and the thumb snaps to the nearest level. Keyboard works too: focus the slider, then use the arrow keys / Home / End.
+- **Colouring**: one colour per level; at the top level the track lights up with the violet energy layer and starfield, and the effort text on the composer model button is tinted to match.
+- **Writes**: releasing (or switching with the keyboard) writes back to the host — the same preference as choosing a level in the official `Reasoning effort` sub-pane. Failures or timeouts roll the display back and show an inline message.
+- **Edges**: if the official model menu changes shape, or the current model has no effort levels, the slider does not appear and the official menu is unaffected.
+
 ### Supported Scope
 
 | Item | Scope |
@@ -192,6 +217,7 @@ dsh plugin --profile web remove dsh-session-plus
 | OS | Official Desktop frontend verified in browser fixtures; native Windows Desktop untested |
 | Browser | Modern Chrome / Safari / Edge |
 | Theme switch | Relies on the official `settings.launcher` seat and the `role="menu"` popup structure; degrades silently when they change |
+| Effort slider | Relies on the official `Reasoning effort` row (`button[role="menuitem"]` plus its label/value spans) and the `modelDirectories` service; degrades silently when they change |
 
 ---
 
@@ -201,7 +227,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-**39 unit tests + 13 browser regressions**. Browser tests require the official DSH runtime and Playwright supplied by the verification environment; plain `npm test` skips those 13 cases. Enable the isolated fixtures with the following command (no model calls):
+**51 unit tests + 19 browser regressions**. Browser tests require the official DSH runtime and Playwright supplied by the verification environment; plain `npm test` skips those 19 cases. Enable the isolated fixtures with the following command (no model calls):
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -228,7 +254,9 @@ Coverage:
 - **Account-menu anchoring**: side-top placement, viewport clamping, 4px tolerance acceptance and rejection, post-insertion self-correction
 - **Browser runtime**: official model menu, live directory updates, multi-session isolation, rich-text / textarea focus recovery, selection re-show, sidebar and composer boundaries, Windows title-bar avoidance, unmount cleanup
 - **Theme switch (real Menu primitive)**: injection point and panel fit, single write per click without closing the menu, single commit per drag, arrow keys and focus, close cleanup and reopen state, external theme changes, reduced-motion landing, no injection into other popups
-- **Browser-half registration surface**: only two `conversation.input.overlay` registrations, nine locale keys, dictionary and style effects intact, session-header / `shell.overlay` registrations verifiably gone, and graceful degradation when the model or theme service is missing
+- **Effort slider (offline harness)**: injection into the official row (padding / wrap / height, official spans and chevron preserved), level mapping and detents, energy and particle maths, motion engine convergence without overshoot, write-back contract (single commit, correct `provider`/`model`/`reasoningEffort`, dedupe), rollback plus inline message on failure, per-row restoration on close, fail-open when the menu is closed, seat tinting, and the i18n hook falling back to the upstream copy
+- **Effort slider (real `ModelSelect`)**: slider fills the second line of the official row, a drag to the far right writes `max` once and keeps the menu open, closing the menu restores the row's inline styles, End / ArrowLeft write back through the keyboard, right-click opens no settings panel even with a foreign document-level listener installed, and a model without effort levels gets no slider at all
+- **Browser-half registration surface**: two `conversation.input.overlay` registrations plus one `conversation.input.right` entry, fifteen locale keys, dictionary and style effects intact, session-header / `shell.overlay` registrations verifiably gone, and graceful degradation when the model or theme service is missing
 
 ---
 
@@ -237,7 +265,7 @@ Coverage:
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js        # Browser half: provider header + selected-text add + theme switch (single bundle)
+│   ├── client.js        # Browser half: provider header + selected-text add + theme switch + effort slider (single bundle)
 │   ├── index.js         # Host half: deliberately empty apply (lets dsh-client-modules discover the browser half)
 │   ├── insert.js        # Selected text → code-block composition (unit-testable)
 │   ├── label.js         # Provider-label pure function (unit-testable)
@@ -246,6 +274,7 @@ dsh-session-plus/
 ├── test/                # unit tests and official-frontend browser fixtures
 ├── cordis.patch.yml
 ├── CHANGELOG.md
+├── NOTICE.md            # third-party provenance and MIT notice (ported from dsh-codex-effort-slider)
 ├── package.json
 └── LICENSE
 ```
@@ -274,6 +303,7 @@ dsh-session-plus/
 - [x] Trailing blank line after insertion
 - [x] Remove "Open Workspace" (superseded by DSH's built-in Open In…, other two features retained)
 - [x] Account-menu theme shortcut (Rubber Segment, drag momentum, reduced motion)
+- [x] Reasoning-effort slider (ported from `dsh-codex-effort-slider`: continuous drag, one colour per level, max-level energy layer)
 - [ ] Escaping / tolerance for fences inside the selected text
 - [ ] Insert position options (start / end / cursor)
 
@@ -282,3 +312,5 @@ dsh-session-plus/
 ## 📄 License
 
 This project is released under the [MIT](LICENSE) license (SPDX: `MIT`).
+
+The reasoning-effort slider is ported from the MIT-licensed `dsh-codex-effort-slider`; see [NOTICE.md](NOTICE.md) for the third-party copyright notice and the exact scope of changes.

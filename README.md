@@ -2,14 +2,14 @@
 
 # dsh-session-plus
 
-**会话增强插件：模型选择菜单顶部实时显示模型提供商 · 选中文本一键以代码块加入输入框 · 账户菜单顶部三态主题快捷切换**
+**会话增强插件：模型选择菜单顶部实时显示模型提供商 · 选中文本一键以代码块加入输入框 · 账户菜单顶部三态主题快捷切换 · 官方「推理等级」行改造为 Codex 风格滑条**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.5.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.6.0-blue?style=for-the-badge)
 
 </div>
 
@@ -17,11 +17,12 @@
 <p align="center"><img src="docs/preview.gif" alt="dsh-session-plus 效果预览" width="720"></p>
 -->
 
-**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供三项轻量增强：
+**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供四项轻量增强：
 
 - 🏷 模型选择菜单顶部**实时展示**当前请求使用的模型提供商
 - ✂️ 选中任意文本，一键以 Markdown 代码块形式**加入输入框开头**
 - 🎚 账户菜单最上方提供 `跟随系统 / 浅色 / 深色` **主题快捷切换**（react-bits Rubber Segment 动效）
+- 🎛 官方模型菜单「推理等级」一行改造为 **Codex 风格连续滑条**（一档一色 + 最高档能量层，迁自 `dsh-codex-effort-slider`）
 
 > [!NOTE]
 > **自 v0.4.0 起，「打开工作区」已从本插件移除。** DSH `0.1.5-rc.1` 已内置功能更完整的 **Open In…** 分体按钮（会话页头部右上角），可在已安装的目录应用中打开当前会话的 workspace；本插件不再重复提供该能力。本插件继续保留提供商展示和选文插入功能。
@@ -90,6 +91,20 @@ flowchart LR
 | 主题自适应 | 轨道、滑块与文字全部使用 DSH 主题 token，深浅色下与外层菜单同色阶 |
 | 安全降级 | 账户菜单由官方 `settings.launcher` 席位提供；席位或菜单结构不匹配时静默不注入，另两项功能照常 |
 
+### 4️⃣ 推理等级滑条
+
+| 特性 | 说明 |
+|---|---|
+| 不新增入口 | 直接改造官方模型菜单里的「推理等级」那一行：加高、允许折行，滑条作为第二行铺满整行；官方 label / value / chevron 一个不动 |
+| 连续跟手 | 拖动过程中即时切换档位（不用等松手）；松手按指针速度做落点外推与吸附，档位数随模型自适应（2 / 4 / 6 档均可） |
+| 一档一色 | 填充从蓝渐变到紫罗兰，越往右越「通电」；最高档亮起紫色能量层、扫光与 22 颗星尘粒子，整行描一圈紫边 |
+| 座席同步 | 输入框里模型按钮上的档位文字与菜单行内数值同步按档位着色，`Off` 档保持官方灰 |
+| 写回可靠 | `directory.select({ provider, model, reasoningEffort })`；同档去重 + 在途合并 + 120 ms 降频 + 10 s 超时回滚，失败时行内提示而不假装成功 |
+| 动画口径 | 固定上游的「完整」动画，**不受系统「减少动态效果」影响**；刻度点固定为「亮白显示已到达档位」 |
+| 无设置面板 | 本插件不提供设置面板，右键 / 长按 / 菜单键都不会弹出任何浮层；同时在 window 捕获阶段截住这些事件，旧版本残留的 document 级监听也弹不出面板 |
+| 安全降级 | 找不到官方那一行、模型没有推理档位、或会话目录未就绪时什么都不做，官方菜单保持原样 |
+| 署名 | 迁移自 MIT 许可的 `dsh-codex-effort-slider@1.1.3`，来源与改动见 [NOTICE.md](NOTICE.md) |
+
 ---
 
 ## 🚀 快速开始
@@ -103,7 +118,7 @@ dsh plugin --profile web add "dsh-session-plus@link:<absolute-path-to-plugin>"
 
 ### 桌面端安装
 
-当前版本：**v0.5.0**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
+当前版本：**v0.6.0**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
 
 ```bash
 "<path-to-desktop-cli>" plugin --profile desktop add "dsh-session-plus@link:<absolute-path-to-plugin>"
@@ -139,6 +154,8 @@ npm exec @deepseek-ai/dsh web
 
 <details>
 <summary>点击展开</summary>
+
+**v0.6.0**：新增官方模型菜单「推理等级」行的 Codex 风格滑条（迁自 MIT 许可的 `dsh-codex-effort-slider@1.1.3`：连续跟手、一档一色、最高档能量层与星尘、座席同步着色、写回去重与超时回滚）；新增离线测试台与 10 项行为断言、6 项真实 `ModelSelect` 浏览器用例，并加一层右键拦截保证不会弹出任何设置面板，并补 `NOTICE.md` 保留上游署名。
 
 **v0.5.0**：新增账户菜单顶部三态主题快捷切换（react-bits Rubber Segment：拉伸跨段、落位挤压、拖拽橡皮筋与甩动惯量，支持减弱动效）；新增 `lib/rubber.js`、`lib/account-menu.js` 纯函数与对应单测；浏览器夹具适配当前桌面构建（动态解析官方前端入口标记、加载官方样式表、修复模型菜单夹具），并新增 7 项主题切换浏览器回归。
 
@@ -184,6 +201,14 @@ dsh plugin --profile web remove dsh-session-plus
 - **不打断**：切换后菜单保持打开，可连续比较三种主题。
 - **边界**：账户菜单由官方 `settings.launcher` 席位提供；若该席位被第三方侧边栏接管、或 DSH 改动了菜单结构，切换条会静默不出现（不影响提供商头部与选文插入）。
 
+### 推理等级滑条
+
+- **位置**：点开输入框下方的模型菜单后，「推理等级」那一行下面新增一条滑条（该行因此被加高）。
+- **操作**：按住轨道拖动即可，拖到哪一档就实时变成哪一档；松手后会按指针速度做落点外推并吸附到最近档位。也支持键盘：聚焦滑条后按方向键 / Home / End。
+- **着色**：一档一色；拖到最高档时轨道亮起紫色能量层与星尘，输入框模型按钮上的档位文字同步变色。
+- **写入**：松手（或键盘切换）后写回宿主，与官方「推理等级」子面板选择是同一个偏好；写入失败或超时会回滚并在行内提示。
+- **边界**：官方模型菜单结构变化、或当前模型本身没有推理档位时，滑条不出现，官方菜单不受影响。
+
 ### 支持范围
 
 | 项目 | 范围 |
@@ -191,6 +216,7 @@ dsh plugin --profile web remove dsh-session-plus
 | DSH | 桌面 `0.2.1-rc.2`；保留旧版 Web 的 `menu` / textarea 接口兼容 |
 | 平台 | 官方桌面前端由浏览器夹具验证；Windows 原生桌面未实测 |
 | 主题切换 | 依赖官方 `settings.launcher` 席位与 `role="menu"` 弹层结构，结构变化时静默降级 |
+| 推理等级滑条 | 依赖官方模型菜单「推理等级」行（`button[role="menuitem"]` + label/value span）与 `modelDirectories` 服务，结构变化时静默降级 |
 | 浏览器 | 现代 Chrome / Safari / Edge |
 
 ---
@@ -201,7 +227,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-共 **39 项单元测试 + 13 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 13 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
+共 **51 项单元测试 + 19 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 19 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -228,7 +254,9 @@ node --test test/*.test.mjs
 - **账户菜单锚定**：侧上落点、视口夹紧、4px 容差内接受与超出拒绝、插入后自校正
 - **浏览器运行时**：官方模型菜单、实时目录更新、多会话隔离、富文本 / textarea 焦点恢复、选区重显、侧栏与编辑区边界、Windows 标题栏避让与卸载清理
 - **主题切换（真实 Menu 原语）**：注入位置与面板贴合、点击只写一次且菜单不关、拖拽单次落定、方向键与焦点、关闭清理与重开回显、外部改主题跟随、减弱动效直接落位、其它弹层不误注入
-- **浏览器半区注册面**：`conversation.input.overlay` 两条注册、词典与样式 effect、模型服务 / 主题服务缺失时的降级
+- **推理等级滑条（离线台）**：注入进官方那一行（内距 / 折行 / 高度，官方 span 与 chevron 保留）、档位映射与滞回吸附、能量与粒子数学、运动引擎收敛且无过冲、写回契约（单次提交、参数正确、同档去重）、失败回滚与行内提示、关菜单逐项还原、关菜单时 fail-open、座席着色、本地化回退
+- **推理等级滑条（真实 ModelSelect）**：滑条铺满官方行的第二行、拖到最右端只写一次 `max` 且菜单保持打开、关闭后行内样式还原、键盘 End / ArrowLeft 切换并写回、右键不弹出任何设置面板（含拦截 document 上同类监听）、模型没有推理档位时不注入
+- **浏览器半区注册面**：`conversation.input.overlay` 两条 + `conversation.input.right` 一条注册、十五个词典键、样式 effect、模型服务 / 主题服务缺失时的降级
 
 ---
 
@@ -237,7 +265,7 @@ node --test test/*.test.mjs
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js        # 浏览器半区：提供商头部 + 选中添加 + 主题切换（单 bundle）
+│   ├── client.js        # 浏览器半区：提供商头部 + 选中添加 + 主题切换 + 推理等级滑条（单 bundle）
 │   ├── index.js         # 宿主半区：刻意保留的空 apply（让浏览器半区被 dsh-client-modules 发现）
 │   ├── insert.js        # 选中文本 → 代码块拼接纯函数（可单测）
 │   ├── label.js         # 提供商名解析纯函数（可单测）
@@ -246,6 +274,7 @@ dsh-session-plus/
 ├── test/                # 单元测试与官方前端浏览器夹具
 ├── cordis.patch.yml
 ├── CHANGELOG.md
+├── NOTICE.md            # 第三方来源与 MIT 声明（迁移自 dsh-codex-effort-slider）
 ├── package.json
 └── LICENSE
 ```
@@ -274,6 +303,7 @@ dsh-session-plus/
 - [x] 插入结果末尾空行
 - [x] 移除「打开工作区」（DSH 已内置 Open In… 取代，保留另外两项功能）
 - [x] 账户菜单主题快捷切换（Rubber Segment、拖拽惯量、减弱动效）
+- [x] 推理等级滑条（迁自 `dsh-codex-effort-slider`：连续跟手、一档一色、最高档能量层）
 - [ ] 选中文本内含围栏时的转义 / 容错处理
 - [ ] 插入位置可选（开头 / 末尾 / 光标处）
 
@@ -282,3 +312,5 @@ dsh-session-plus/
 ## 📄 许可证
 
 本项目基于 [MIT](LICENSE) 许可证发布（SPDX: `MIT`）。
+
+其中「推理等级滑条」迁移自 MIT 许可的 `dsh-codex-effort-slider`，第三方版权声明与改动范围见 [NOTICE.md](NOTICE.md)。

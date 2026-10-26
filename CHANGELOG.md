@@ -4,6 +4,50 @@
 
 ---
 
+## v0.6.0
+
+### 中文
+
+**新增：官方模型菜单「推理等级」行的 Codex 风格滑条（迁自 `dsh-codex-effort-slider@1.1.3`）**
+
+- 不新增入口：直接改造官方模型菜单里的「推理等级」那一行——加高、允许折行，滑条作为第二行铺满整行，官方 label / value / chevron 一个不动。
+- 连续跟手：拖动中即时切换档位，松手按指针速度做落点外推与吸附；档位数随模型自适应（2 / 4 / 6 档均可）。
+- 一档一色：填充从蓝渐变到紫罗兰，最高档亮起紫色能量层、扫光与 22 颗星尘粒子并描边；输入框模型席的档位文字与菜单行数值同步着色，`Off` 保持官方灰。
+- 写回可靠：`directory.select({ provider, model, reasoningEffort })`，同档去重 + 在途合并 + 120 ms 降频 + 10 s 超时回滚，失败时行内提示而不假装成功。
+- 动画口径：固定上游「完整」动画，**不受系统「减少动态效果」影响**；刻度点固定「亮白显示已到达档位」。
+- 安全降级：找不到官方那一行、模型无推理档位、目录未就绪时什么都不做，官方菜单保持原样。
+- 无设置面板：本插件不提供设置面板，右键 / 长按 / 菜单键都不弹浮层；并在 window 捕获阶段截住这些事件、清理旧版本残留的 document 级监听，避免历史面板重新弹出。
+- 迁移范围按既定决策裁剪：**不迁移**右键设置面板、浏览器本地存储设置、三档动画切换与逐帧诊断。
+
+**工程**
+
+- 客户端单 bundle 内新增 vendor 段落（上游核心按「迁移改造」注释标注改动点）；文案改走本插件 zh/en 词典（新增 6 个键），样式并入既有 `<style>` 标签而不再单独挂载。
+- `exports.inject` 保持不变；滑条用 `ctx.inject(["modelDirectories"])` 单独装配，服务缺失时其余三项功能不受影响。
+- 新增离线测试台 `test/helpers/effort-harness.mjs`（假 DOM + 带状态 React 桩 + 假宿主）与 10 项关键行为断言；浏览器夹具补齐 `reasoning.efforts` 与 `select()` 记录，新增 6 项真实 `ModelSelect` 用例（含键盘 End / ArrowLeft 写回、右键不弹面板）。
+- 单元测试 39 → 51 项，浏览器回归 13 → 19 项；新增 `NOTICE.md` 保留上游 MIT 声明。
+
+### English
+
+**Added: Codex-style slider for the official "Reasoning effort" row (ported from `dsh-codex-effort-slider@1.1.3`)**
+
+- No new entry point: reworks the official row in place — taller, wrapping, slider filling a second line; the official label / value / chevron stay untouched.
+- Continuous drag: levels change while dragging; release projects pointer velocity and snaps to the nearest level; level count adapts per model (2 / 4 / 6).
+- One colour per level, from blue to violet; the top level lights a violet energy layer, sweep, and 22 starfield particles with a row outline. The composer's effort text and the row value are tinted per level; `Off` keeps the official grey.
+- Reliable writes via `directory.select({ provider, model, reasoningEffort })` with same-level dedupe, in-flight merge, 120 ms throttling, and a 10 s timeout rollback; failures show an inline message.
+- Motion fixed to upstream's "full" profile and **unaffected by the OS reduce-motion setting**; ticks fixed to "highlight reached levels".
+- Safe fallback: missing row, no effort levels, or an unready directory means nothing happens and the official menu is untouched.
+- No settings panel: the plugin ships none, so right-click, long-press, and the context-menu key never open a popup; a window-capture guard also clears document-level listeners left behind by the previous version.
+- Scope trimmed as agreed: the right-click settings panel, browser-local settings, the three motion profiles, and the per-frame diagnostics are **not** ported.
+
+**Engineering**
+
+- New vendor segment inside the single client bundle (every change marked "迁移改造"); copy now resolves through this plugin's zh/en dictionary (6 new keys) and styles are merged into the existing `<style>` tag instead of a separate one.
+- `exports.inject` is unchanged; the slider assembles through its own `ctx.inject(["modelDirectories"])`, so the other three features keep working when the service is missing.
+- New offline harness `test/helpers/effort-harness.mjs` (fake DOM + stateful React stub + fake host) with 10 key behaviour assertions; the browser fixture now carries `reasoning.efforts` and records `select()`, with 6 new cases against the real `ModelSelect` (including keyboard End / ArrowLeft write-back and right-click opening no panel).
+- Unit tests 39 → 51, browser regressions 13 → 19; `NOTICE.md` preserves the upstream MIT notice.
+
+---
+
 ## v0.5.0
 
 ### 中文
