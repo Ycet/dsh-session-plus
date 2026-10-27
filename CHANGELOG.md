@@ -4,6 +4,65 @@
 
 ---
 
+## v0.7.0
+
+### 中文
+
+**新增 1：新建会话页的「在应用中打开」分体按钮**
+
+- 补齐官方缺口：官方只把 Open In… 分体按钮放在已有对话的会话页头部；新建会话页（已选工作区、尚未发消息）那一行工具区在空会话下不渲染，本插件在那里补一个同款按钮。
+- 位置：以官方「展开右侧面板」按钮所在的那组按钮为基准，插在整组**最左侧**（其它插件如 `dsh-better-sidebar` 的按钮排在它右侧），左侧留出固定间距。
+- 行为一致：左格=当前默认应用图标，点击用该应用打开当前会话工作区；右格箭头弹出已安装应用列表，选择后记住并立即打开；悬停提示带官方快捷键（默认 ⌥⌘O）。
+- 偏好共享：首次从官方 `dsh.open-in-app.choice` **只读**继承；本插件用 `dsh.session-plus.open-in-app.v1` 记录自己的选择，绝不改写官方状态。
+- 自动让位与面板互斥：发出第一条消息后本插件按钮立即卸载（只剩官方那一个）；右侧面板展开时隐藏、收起后立即恢复。
+- 复用官方宿主路由（`GET /open-in-app/apps`、`GET /open-in-app/icon/<id>`、`POST /open-in-app/open`），未复制官方代码；图标加载失败回退为上箭头字形；打开失败提示「打开失败，请重试」并在 3 秒后自动消失。
+- 安全降级：官方应用目录不可用或返回空列表、会话没有工作区目录时整颗按钮不渲染；其余功能不受影响。
+
+**新增 2：「设置 → 通用」里的 5 个功能开关**
+
+- 位置：紧接官方「在使用官方模型 API 时上传 Session Log」行（`order: 90`）下方、「当前版本」行（`order: 100`）上方，占 `order: 91–95`。
+- 粒度：提供商头部 / 选中文本加入对话 / 账户菜单主题切换 / 推理等级滑条 / 新建会话页按钮，各一个独立开关，互不影响；默认全开，升级后行为不变。
+- 即时生效：关闭即移除对应 UI 与注入（定时器、`MutationObserver`、`resize` / `pointerdown` 监听、DOM 节点、样式一并回收），重新打开立即回来，无需刷新或重启。
+- 原生回退：关闭「推理等级滑条」后，官方「推理等级」行的行高、折行、内边距逐项还原。
+- 外观：与官方开关同一套几何与 token（36×20 轨道、16px 圆形滑块、选中色 `--dsw-alias-brand-primary`、`.12s` 位移、`role="switch"` + `aria-checked`）。
+- 持久化与容错：偏好存浏览器 `localStorage`（键 `dsh.session-plus.features.v1`）；`localStorage` 不可用或内容损坏时退回「全开」并在内存生效，不报错。
+
+**工程**
+
+- `lib/client.js` 新增功能开关仓库（含 `useFeatureFlag`，优先 `useSyncExternalStore`）、五条 `settings.general.item` 注册与新会话按钮的 portal 落点逻辑；`lib/index.js`、`cordis.patch.yml`、`package.json` 的 `dsh.client.inject` 均未改动。
+- 修掉两个自查发现的缺陷：① 面板展开时官方锚点消失导致插入点退化为自身、观察回调自激成死循环（改为显式识别并加 rAF 节流）；② 主题切换条被关掉后重新开启时，菜单高度已变导致几何反查失配（改为记住原菜单并在其仍可见时直接复用）。
+- 测试：新增 `test/feature-flags.test.mjs`（11 项）、`test/open-in-app.test.mjs`（15 项）与 `test/session-plus-v070-browser.test.mjs`（6 项浏览器用例）；既有套件补 4 项开关门控用例。单元测试 51 → 79 项，浏览器回归 19 → 29 项，合计 108 项全绿。
+- `NOTICE.md` 增补官方 `@deepseek-ai/dsh-client-ui-open-in-app` 的 MIT 来源说明（仅镜像视觉参数与文案、复用宿主路由契约）。
+
+### English
+
+**New 1: an "Open in app" split button on the new-session page**
+
+- Fills an official gap: the official Open In… split button only exists in the header of a session that already has messages; the new-session page does not render that utilities row, so this plugin renders the same split button there.
+- Placement: anchored to the group holding the official "expand right panel" button and inserted as that group's **leftmost** control, with a fixed gap on the left.
+- Same behaviour: the left cell shows the current default app and opens the workspace in it; the chevron lists installed apps, remembers the pick and opens immediately; the tooltip shows the official shortcut (⌥⌘O by default).
+- Shared preference: read-only inheritance from `dsh.open-in-app.choice` on first use; the plugin records its own choice under `dsh.session-plus.open-in-app.v1` and never rewrites the official value.
+- Steps aside and excludes the panel: the plugin button unmounts once the first message is sent; it hides while the right panel is expanded and returns on collapse.
+- Reuses the official host routes (`GET /open-in-app/apps`, `GET /open-in-app/icon/<id>`, `POST /open-in-app/open`) without copying official code; a failed icon falls back to an arrow glyph; a refused open shows "Could not open. Try again." for 3 seconds.
+
+**New 2: five per-feature switches in Settings → General**
+
+- Position: directly below the official "Upload Session Log when using the official model API" row (`order: 90`) and above the version row (`order: 100`), occupying `order: 91–95`.
+- Granularity: provider header / selected-text insertion / account-menu theme switch / effort slider / new-session button — one independent switch each; all on by default, so upgrading changes nothing.
+- Instant: turning one off removes its UI and injections (timers, `MutationObserver`, `resize` / `pointerdown` listeners, DOM nodes and styles are all released); turning it on restores it without a reload or restart.
+- Native fallback: switching the effort slider off restores the official `Reasoning effort` row's height, wrapping and padding item by item.
+- Appearance: the same geometry and tokens as the official switch (36×20 track, 16px round thumb, `--dsw-alias-brand-primary` when on, `.12s` transition, `role="switch"` + `aria-checked`).
+- Persistence and tolerance: browser `localStorage` (`dsh.session-plus.features.v1`); unavailable or corrupt storage falls back to "everything on" in memory without throwing.
+
+**Engineering**
+
+- `lib/client.js` gains a feature-flag store (`useFeatureFlag`, `useSyncExternalStore` first), five `settings.general.item` registrations and the portal placement for the new-session button; `lib/index.js`, `cordis.patch.yml` and `dsh.client.inject` are untouched.
+- Two self-found defects fixed: (1) with the panel expanded the official anchor disappears and the insertion point degrades to our own node, making the observer self-trigger in a loop (explicit identity check plus rAF throttling); (2) after switching the theme strip off and on again the menu height changed, breaking the geometric lookup (the bridge now remembers the menu and reuses it while still visible).
+- Tests: new `test/feature-flags.test.mjs` (11), `test/open-in-app.test.mjs` (15) and `test/session-plus-v070-browser.test.mjs` (6 browser cases), plus 4 switch-gating cases in the existing suites. Unit tests 51 → 79, browser regressions 19 → 29, 108 in total, all green.
+- `NOTICE.md` records the MIT provenance of `@deepseek-ai/dsh-client-ui-open-in-app` (visual parameters and copy mirrored, host route contract reused).
+
+---
+
 ## v0.6.0
 
 ### 中文

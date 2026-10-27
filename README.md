@@ -2,14 +2,14 @@
 
 # dsh-session-plus
 
-**会话增强插件：模型选择菜单顶部实时显示模型提供商 · 选中文本一键以代码块加入输入框 · 账户菜单顶部三态主题快捷切换 · 官方「推理等级」行改造为 Codex 风格滑条**
+**会话增强插件：模型提供商头部 · 选中文本一键加入输入框 · 账户菜单三态主题切换 · Codex 风格推理等级滑条 · 新建会话页「在应用中打开」按钮 —— 每一项都在「设置 → 通用」里有独立开关**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.6.0-blue?style=for-the-badge)
+![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.3-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.7.0-blue?style=for-the-badge)
 
 </div>
 
@@ -17,15 +17,17 @@
 <p align="center"><img src="docs/preview.gif" alt="dsh-session-plus 效果预览" width="720"></p>
 -->
 
-**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供四项轻量增强：
+**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供五项轻量增强 + 一个统一开关面板：
 
 - 🏷 模型选择菜单顶部**实时展示**当前请求使用的模型提供商
 - ✂️ 选中任意文本，一键以 Markdown 代码块形式**加入输入框开头**
 - 🎚 账户菜单最上方提供 `跟随系统 / 浅色 / 深色` **主题快捷切换**（react-bits Rubber Segment 动效）
 - 🎛 官方模型菜单「推理等级」一行改造为 **Codex 风格连续滑条**（一档一色 + 最高档能量层，迁自 `dsh-codex-effort-slider`）
+- 🪟 新建会话页标题栏补上 **Open In… 分体按钮**（官方只在对话页提供；右侧面板展开时自动隐藏）
+- ⚙️ 「设置 → 通用」里为以上**每一项**提供独立开关，即时生效、可随时关掉
 
 > [!NOTE]
-> **自 v0.4.0 起，「打开工作区」已从本插件移除。** DSH `0.1.5-rc.1` 已内置功能更完整的 **Open In…** 分体按钮（会话页头部右上角），可在已安装的目录应用中打开当前会话的 workspace；本插件不再重复提供该能力。本插件继续保留提供商展示和选文插入功能。
+> **自 v0.4.0 起，「打开工作区」不再由本插件独立实现。** DSH 已内置功能完整的 **Open In…** 分体按钮（会话页头部右上角）；本插件只做两件事：不再重复提供该能力，并在 **v0.7.0** 把这个官方按钮**补到新建会话页**（那里官方不渲染该行工具区），行为与官方完全一致。
 
 ## 📑 目录
 
@@ -101,9 +103,36 @@ flowchart LR
 | 座席同步 | 输入框里模型按钮上的档位文字与菜单行内数值同步按档位着色，`Off` 档保持官方灰 |
 | 写回可靠 | `directory.select({ provider, model, reasoningEffort })`；同档去重 + 在途合并 + 120 ms 降频 + 10 s 超时回滚，失败时行内提示而不假装成功 |
 | 动画口径 | 固定上游的「完整」动画，**不受系统「减少动态效果」影响**；刻度点固定为「亮白显示已到达档位」 |
-| 无设置面板 | 本插件不提供设置面板，右键 / 长按 / 菜单键都不会弹出任何浮层；同时在 window 捕获阶段截住这些事件，旧版本残留的 document 级监听也弹不出面板 |
+| 无右键面板 | 滑条本体不提供任何右键 / 长按 / 菜单键面板，并在 window 捕获阶段截住这些事件，旧版本残留的 document 级监听也弹不出面板；要开关滑条请到「设置 → 通用」 |
 | 安全降级 | 找不到官方那一行、模型没有推理档位、或会话目录未就绪时什么都不做，官方菜单保持原样 |
 | 署名 | 迁移自 MIT 许可的 `dsh-codex-effort-slider@1.1.3`，来源与改动见 [NOTICE.md](NOTICE.md) |
+
+### 5️⃣ 新建会话页「在应用中打开」按钮
+
+| 特性 | 说明 |
+|---|---|
+| 补齐官方缺口 | 官方只把 Open In… 分体按钮放在**已有对话**的会话页头部；**新建会话页**（已选工作区、尚未发消息）那一行工具区不渲染，本插件在那里补一个同款按钮 |
+| 位置精确 | 以官方「展开右侧面板」按钮所在的那组按钮为基准，插在整组**最左侧**（其它插件如 `dsh-better-sidebar` 的按钮排在它右侧），左侧留出固定间距 |
+| 行为一致 | 左格=当前默认应用图标，点击用该应用打开当前会话的工作区；右格箭头弹出已安装应用列表，选择后记住并立即打开 |
+| 偏好共享 | 首次从官方 `dsh.open-in-app.choice` **只读**继承默认应用；本插件用 `dsh.session-plus.open-in-app.v1` 记录自己的选择，绝不改写官方状态 |
+| 自动让位 | 发出第一条消息后（页面进入对话态）本插件按钮立即卸载，只剩官方那一个，永不重复 |
+| 面板互斥 | 打开右侧面板时隐藏，收起后立即恢复 |
+| 无工作区不显示 | 会话还没有工作区目录（`cwd`）时不显示，避免点了没反应 |
+| 失败反馈 | 宿主返回失败时提示「打开失败，请重试」，3 秒后自动消失 |
+| 安全降级 | 官方应用目录路由不可用或返回空列表时整颗按钮不渲染（与官方一致），其余功能不受影响 |
+| 文案署名 | 按钮文案与 34 个应用显示名镜像官方 `@deepseek-ai/dsh-client-ui-open-in-app`（MIT），见 [NOTICE.md](NOTICE.md) |
+
+### 6️⃣ 通用设置里的逐项开关
+
+| 特性 | 说明 |
+|---|---|
+| 位置 | 「设置 → 通用」，紧接官方「在使用官方模型 API 时上传 Session Log」行**下方**、「当前版本」行上方 |
+| 五项独立 | 提供商头部 / 选中文本加入对话 / 账户菜单主题切换 / 推理等级滑条 / 新建会话页按钮，各一个开关，互不影响 |
+| 即时生效 | 关掉后对应 UI 与注入立即移除（定时器、监听、DOM、样式一并回收），重新打开立即回来，无需刷新或重启 |
+| 官方同款 | 与官方开关同一套几何与 token（36×20 轨道、圆形滑块、选中色 `--dsw-alias-brand-primary`、`.12s` 位移） |
+| 原生回退 | 关闭「推理等级滑条」后，官方原生「推理等级」行原样回来（行高、折行、内边距全部还原） |
+| 默认全开 | 升级后行为保持不变；偏好存在浏览器 `localStorage` 的 `dsh.session-plus.features.v1` |
+| 容错 | `localStorage` 不可用或内容损坏时退回「全开」并在内存生效，不报错 |
 
 ---
 
@@ -209,14 +238,31 @@ dsh plugin --profile web remove dsh-session-plus
 - **写入**：松手（或键盘切换）后写回宿主，与官方「推理等级」子面板选择是同一个偏好；写入失败或超时会回滚并在行内提示。
 - **边界**：官方模型菜单结构变化、或当前模型本身没有推理档位时，滑条不出现，官方菜单不受影响。
 
+### 新建会话页「在应用中打开」
+
+- **位置**：点侧边栏某个工作区进入的新会话页（空白、未发消息），标题栏右侧那组按钮的**最左侧**。
+- **操作**：点左格用当前默认应用打开该工作区；点右格从已安装应用里选一个，选择会被记住。
+- **隐藏时机**：打开右侧面板时隐藏、收起后恢复；发出第一条消息后不再显示（对话页由官方那一个按钮接管）。
+- **快捷键**：与官方命令共用（默认 ⌥⌘O），悬停提示里显示当前键位。
+- **失败**：宿主拒绝或网络失败时提示「打开失败，请重试」。
+- **边界**：宿主没有可用的本地应用、或会话还没有工作区目录时不显示。
+
+### 通用设置开关
+
+- **位置**：「设置 → 通用」，官方「在使用官方模型 API 时上传 Session Log」行下方。
+- **用法**：点右侧开关即可；关闭后相关 UI 立刻消失，重新打开立刻回来。
+- **持久化**：偏好保存在浏览器 `localStorage`（键 `dsh.session-plus.features.v1`）。若本地服务端口变化导致页面 origin 改变，偏好会回到默认「全开」——这是浏览器存储的固有限制，故默认值刻意选为「全开」。
+
 ### 支持范围
 
 | 项目 | 范围 |
 |---|---|
-| DSH | 桌面 `0.2.1-rc.2`；保留旧版 Web 的 `menu` / textarea 接口兼容 |
+| DSH | 桌面 `0.2.1-rc.3`（本版按该版本包体核对）；保留旧版 Web 的 `menu` / textarea 接口兼容 |
 | 平台 | 官方桌面前端由浏览器夹具验证；Windows 原生桌面未实测 |
 | 主题切换 | 依赖官方 `settings.launcher` 席位与 `role="menu"` 弹层结构，结构变化时静默降级 |
 | 推理等级滑条 | 依赖官方模型菜单「推理等级」行（`button[role="menuitem"]` + label/value span）与 `modelDirectories` 服务，结构变化时静默降级 |
+| 新建会话页按钮 | 依赖官方 `conversation.hero.options` 席位、标题栏 `[data-conversation-header-corner]` 容器，以及宿主路由 `GET /open-in-app/apps`、`POST /open-in-app/open`；任一缺失即静默不渲染 |
+| 通用设置开关 | 依赖官方 `settings.general.item` 席位；席位不存在时 5 行开关不出现，其余功能照常 |
 | 浏览器 | 现代 Chrome / Safari / Edge |
 
 ---
@@ -227,7 +273,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-共 **51 项单元测试 + 19 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 19 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
+共 **79 项单元测试 + 29 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 29 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -256,7 +302,11 @@ node --test test/*.test.mjs
 - **主题切换（真实 Menu 原语）**：注入位置与面板贴合、点击只写一次且菜单不关、拖拽单次落定、方向键与焦点、关闭清理与重开回显、外部改主题跟随、减弱动效直接落位、其它弹层不误注入
 - **推理等级滑条（离线台）**：注入进官方那一行（内距 / 折行 / 高度，官方 span 与 chevron 保留）、档位映射与滞回吸附、能量与粒子数学、运动引擎收敛且无过冲、写回契约（单次提交、参数正确、同档去重）、失败回滚与行内提示、关菜单逐项还原、关菜单时 fail-open、座席着色、本地化回退
 - **推理等级滑条（真实 ModelSelect）**：滑条铺满官方行的第二行、拖到最右端只写一次 `max` 且菜单保持打开、关闭后行内样式还原、键盘 End / ArrowLeft 切换并写回、右键不弹出任何设置面板（含拦截 document 上同类监听）、模型没有推理档位时不注入
-- **浏览器半区注册面**：`conversation.input.overlay` 两条 + `conversation.input.right` 一条注册、十五个词典键、样式 effect、模型服务 / 主题服务缺失时的降级
+- **功能开关（离线）**：默认全开、`localStorage` 读写与回读、损坏 JSON / 非对象 / 非法值容错、隐私模式写入失败容错、未知 id 忽略、订阅去重与退订、`reset` 重读、设置行 order 与中英文案键完整性
+- **在应用中打开（离线）**：三个宿主路由常量、请求体与失败返回、应用目录只读一次与空列表 / 非 2xx / 断网降级、偏好继承（自有键优先、官方键裸字符串与 JSON 两种写法）、应用名回退、四条可见性条件真值表、面板展开判定的服务与 DOM 双通道
+- **在应用中打开（真实 DOM）**：空会话页出现且排在该组按钮最左侧、发出消息后卸载且不残留宿主节点、右侧面板展开隐藏 / 收起恢复、主按钮请求体正确、应用菜单切换并写入偏好、失败提示自动消失
+- **功能开关（真实 DOM）**：5 行开关落在官方上传行之后且顺序稳定；关闭提供商头部 / 选文浮层 / 推理滑条 / 主题三态条 / 新会话按钮后即时移除，重新开启即时恢复（含滑条关闭后官方行的行高、折行、内边距逐项还原）
+- **浏览器半区注册面**：`conversation.input.overlay` 两条 + `conversation.input.right` 一条 + `conversation.hero.options` 一条 + `settings.general.item` 五行注册、六十五个词典键、样式 effect、模型服务 / 主题服务缺失时的降级
 
 ---
 
@@ -265,7 +315,7 @@ node --test test/*.test.mjs
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js        # 浏览器半区：提供商头部 + 选中添加 + 主题切换 + 推理等级滑条（单 bundle）
+│   ├── client.js        # 浏览器半区：提供商头部 + 选中添加 + 主题切换 + 推理滑条 + 新会话打开按钮 + 开关面板（单 bundle）
 │   ├── index.js         # 宿主半区：刻意保留的空 apply（让浏览器半区被 dsh-client-modules 发现）
 │   ├── insert.js        # 选中文本 → 代码块拼接纯函数（可单测）
 │   ├── label.js         # 提供商名解析纯函数（可单测）
@@ -274,7 +324,7 @@ dsh-session-plus/
 ├── test/                # 单元测试与官方前端浏览器夹具
 ├── cordis.patch.yml
 ├── CHANGELOG.md
-├── NOTICE.md            # 第三方来源与 MIT 声明（迁移自 dsh-codex-effort-slider）
+├── NOTICE.md            # 第三方来源与 MIT 声明（dsh-codex-effort-slider 迁移 + 官方 open-in-app 文案/视觉镜像）
 ├── package.json
 └── LICENSE
 ```
@@ -285,7 +335,7 @@ dsh-session-plus/
 
 | 类别 | 技术 |
 |---|---|
-| 运行时 | DeepSeek Harness（DSH `0.2.0-rc.2`）· Cordis 插件系统 |
+| 运行时 | DeepSeek Harness（DSH `0.2.1-rc.3`）· Cordis 插件系统 |
 | 语言 | 原生 JavaScript（ESM，无构建步骤） |
 | 浏览器侧 | DSH client runtime（`@deepseek-ai/dsh-client-*`），单 bundle 注入 |
 | 宿主侧 | 无运行时依赖：空 `apply` 宿主行，保留它是为了让浏览器半区被 `dsh-client-modules` 发现 |
@@ -304,6 +354,8 @@ dsh-session-plus/
 - [x] 移除「打开工作区」（DSH 已内置 Open In… 取代，保留另外两项功能）
 - [x] 账户菜单主题快捷切换（Rubber Segment、拖拽惯量、减弱动效）
 - [x] 推理等级滑条（迁自 `dsh-codex-effort-slider`：连续跟手、一档一色、最高档能量层）
+- [x] 新建会话页「在应用中打开」按钮（同款分体按钮、排在按钮组最左、面板互斥、偏好继承）
+- [x] 通用设置逐项开关（5 项独立、即时生效、原生回退、`localStorage` 持久化）
 - [ ] 选中文本内含围栏时的转义 / 容错处理
 - [ ] 插入位置可选（开头 / 末尾 / 光标处）
 
@@ -313,4 +365,9 @@ dsh-session-plus/
 
 本项目基于 [MIT](LICENSE) 许可证发布（SPDX: `MIT`）。
 
-其中「推理等级滑条」迁移自 MIT 许可的 `dsh-codex-effort-slider`，第三方版权声明与改动范围见 [NOTICE.md](NOTICE.md)。
+其中：
+
+- 「推理等级滑条」迁移自 MIT 许可的 `dsh-codex-effort-slider`；
+- 「新建会话页按钮」的视觉参数、按钮文案与 34 个应用显示名镜像自 MIT 许可的官方包 `@deepseek-ai/dsh-client-ui-open-in-app`（未复制其代码，仅复用其宿主 HTTP 路由契约）。
+
+第三方版权声明与改动范围见 [NOTICE.md](NOTICE.md)。

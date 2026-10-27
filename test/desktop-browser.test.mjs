@@ -307,3 +307,71 @@ test('推理等级滑条：模型没有推理档位时不注入（fail-open）',
     assert.deepEqual(fixture.errors, []);
   } finally { await fixture.close(); }
 });
+
+// ── v0.7.0 功能开关：既有功能必须能被通用设置里的开关即时关掉、再即时打开 ──
+
+test('功能开关：关闭「模型菜单显示提供商」后头部消失，重开立即恢复', options, async () => {
+  const fixture = await browserHarness();
+  try {
+    const { page } = fixture;
+    await page.locator('#main [aria-haspopup="menu"]').click();
+    await page.waitForSelector('[data-model-provider-header]');
+    await page.evaluate(() => fixture.setFlag('provider-header', false));
+    await page.waitForFunction(() => document.querySelector('[data-model-provider-header]') === null);
+    assert.deepEqual(await page.evaluate(() => fixture.flags()), {
+      'provider-header': false, 'selection-add': true, 'theme-switch': true, 'effort-slider': true, 'open-in-session': true,
+    });
+    await page.evaluate(() => fixture.setFlag('provider-header', true));
+    await page.waitForSelector('[data-model-provider-header]');
+    assert.deepEqual(fixture.errors, []);
+  } finally { await fixture.close(); }
+});
+
+test('功能开关：关闭「选中文本加入对话」后浮层按钮不再出现，重开恢复', options, async () => {
+  const fixture = await browserHarness();
+  try {
+    const { page } = fixture;
+    await page.evaluate(() => fixture.setFlag('selection-add', false));
+    await page.evaluate(() => fixture.select('main-message'));
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('.sp-add-btn').count(), 0, '关闭后不得再出现选区浮层');
+    await page.evaluate(() => fixture.setFlag('selection-add', true));
+    await page.evaluate(() => fixture.select('main-message'));
+    await page.waitForSelector('.sp-add-btn');
+    assert.equal(await page.locator('.sp-add-btn').count(), 1);
+    assert.deepEqual(fixture.errors, []);
+  } finally { await fixture.close(); }
+});
+
+test('功能开关：关闭「推理等级滑条」后滑条与行内改样一起还原，重开恢复', options, async () => {
+  const fixture = await browserHarness();
+  try {
+    const { page } = fixture;
+    await page.locator('#main [aria-haspopup="menu"]').click();
+    await page.waitForSelector('.ces-track');
+    const injected = await page.evaluate(() => {
+      const row = document.querySelector('.ces-track').closest('[role="menuitem"]');
+      return { height: row.style.height, flexWrap: row.style.flexWrap, container: document.querySelectorAll('.ces-inline').length };
+    });
+    assert.equal(injected.height, 'auto');
+    assert.equal(injected.flexWrap, 'wrap');
+    assert.ok(injected.container >= 1, '滑条容器已注入（菜单可能是 group+menu 两层，数量不固定）');
+
+    await page.evaluate(() => fixture.setFlag('effort-slider', false));
+    await page.waitForFunction(() => document.querySelectorAll('.ces-track').length === 0
+      && document.querySelectorAll('.ces-inline').length === 0);
+    const restored = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('[role="menuitem"]')];
+      const row = rows.find(candidate => /推理等级|Effort/.test(candidate.textContent));
+      return row ? { height: row.style.height, flexWrap: row.style.flexWrap, paddingTop: row.style.paddingTop } : null;
+    });
+    assert.notEqual(restored, null, '官方推理等级行必须还在');
+    assert.equal(restored.height, '', '关闭后行高还原');
+    assert.equal(restored.flexWrap, '', '关闭后折行还原');
+    assert.equal(restored.paddingTop, '', '关闭后内边距还原');
+
+    await page.evaluate(() => fixture.setFlag('effort-slider', true));
+    await page.waitForSelector('.ces-track');
+    assert.deepEqual(fixture.errors, []);
+  } finally { await fixture.close(); }
+});

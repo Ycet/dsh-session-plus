@@ -208,3 +208,21 @@ test('主题切换：prefers-reduced-motion 下一帧内直接落位', options, 
 		await fixture.close();
 	}
 });
+
+// v0.7.0 功能开关：账户菜单的三态切换条也要能被通用设置即时关掉/打开。
+test('功能开关：关闭「账户菜单主题快捷切换」后三态条即时移除，重开恢复', options, async () => {
+	const fixture = await themeHarness();
+	try {
+		const { page } = fixture;
+		await page.evaluate(() => fixture.open());
+		await page.waitForSelector('[data-sp-theme-switch]');
+		await page.evaluate(() => fixture.setFlag('theme-switch', false));
+		await page.waitForSelector('[data-sp-theme-switch]', { state: 'detached' });
+		// 菜单本身保持打开：只移除我们注入的那一段。
+		assert.equal(await page.evaluate(() => window.fixture.isOpen()), true);
+		await page.evaluate(() => fixture.setFlag('theme-switch', true));
+		await page.waitForSelector('[data-sp-theme-switch]');
+		await fixture.page.waitForFunction(() => document.querySelector('[data-sp-theme-switch]')?.parentElement?.firstElementChild?.hasAttribute('data-sp-theme-switch'));
+		assert.deepEqual(fixture.errors, []);
+	} finally { await fixture.close(); }
+});

@@ -63,18 +63,39 @@ test("浏览器半区：bundle id 与客户端 inject 保持不变", () => {
 	assert.equal(typeof mod.apply, "function");
 });
 
-test("浏览器半区：四项功能各自的插槽注册齐全", () => {
+test("浏览器半区：六处功能注册齐全（3 个功能席位 + 5 个设置行 + 1 个新会话按钮）", () => {
 	const { seen } = loadClient();
 	assert.deepEqual(seen.slotInjects, [
 		"conversation.input.overlay",
 		"conversation.input.overlay",
 		"conversation.input.right",
+		"settings.general.item",
+		"settings.general.item",
+		"settings.general.item",
+		"settings.general.item",
+		"settings.general.item",
+		"conversation.hero.options",
 	]);
 	assert.deepEqual(seen.registrations, [
 		["conversation.input.overlay", "provider-header", 90],
 		["conversation.input.overlay", "selection-add", 91],
 		["conversation.input.right", "codex-effort-slider", 40],
+		["settings.general.item", "session-plus/provider-header", 91],
+		["settings.general.item", "session-plus/selection-add", 92],
+		["settings.general.item", "session-plus/theme-switch", 93],
+		["settings.general.item", "session-plus/effort-slider", 94],
+		["settings.general.item", "session-plus/open-in-session", 95],
+		["conversation.hero.options", "session-plus/open-in-app", 50],
 	]);
+});
+
+test("浏览器半区：设置行 order 全部落在官方上传行（90）与版本行（100）之间", () => {
+	const { seen } = loadClient();
+	const rows = seen.registrations.filter(([slot]) => slot === "settings.general.item");
+	assert.equal(rows.length, 5, "必须有 5 个功能开关行");
+	for (const [, , order] of rows) {
+		assert.ok(order > 90 && order < 100, `设置行 order ${order} 必须紧跟官方上传 Session Log 行之后`);
+	}
 });
 
 test("浏览器半区：locale 词典、样式 effect 与主题切换 effect 均已装配", () => {
@@ -87,12 +108,62 @@ test("浏览器半区：locale 词典、样式 effect 与主题切换 effect 均
 	]);
 	const expected = [
 		"addToConversation",
+		"app.androidstudio",
+		"app.cursor",
+		"app.explorer",
+		"app.filemanager",
+		"app.finder",
+		"app.fork",
+		"app.ghostty",
+		"app.gitbash",
+		"app.github",
+		"app.gitkraken",
+		"app.gnometerminal",
+		"app.goland",
+		"app.intellij",
+		"app.iterm",
+		"app.kitty",
+		"app.konsole",
+		"app.phpstorm",
+		"app.pycharm",
+		"app.rider",
+		"app.rustrover",
+		"app.smartgit",
+		"app.sourcetree",
+		"app.sublimemerge",
+		"app.sublimetext",
+		"app.terminal",
+		"app.tower",
+		"app.vscode",
+		"app.vscodeinsiders",
+		"app.warp",
+		"app.webstorm",
+		"app.windowsterminal",
+		"app.windsurf",
+		"app.xcode",
+		"app.zed",
 		"effortErrorDirectory",
 		"effortErrorFailed",
 		"effortErrorNotReady",
 		"effortErrorTimeout",
 		"effortSliderLabel",
 		"effortSliderTitle",
+		"featEffortDesc",
+		"featEffortTitle",
+		"featOpenInSessionDesc",
+		"featOpenInSessionTitle",
+		"featProviderDesc",
+		"featProviderTitle",
+		"featSelectionDesc",
+		"featSelectionTitle",
+		"featThemeDesc",
+		"featThemeTitle",
+		"openInAppsError",
+		"openInBusy",
+		"openInDefault",
+		"openInFailed",
+		"openInMore",
+		"openInTitle",
 		"providerEntry",
 		"providerLabel",
 		"themeDark",
@@ -113,9 +184,19 @@ test("浏览器半区：会话头部与 shell.overlay 的注册已彻底移除",
 	}
 });
 
+/** 不依赖 modelDirectories / theme 服务的注册面（设置行 + 新会话按钮）。 */
+const SERVICE_FREE_ROWS = [
+	["settings.general.item", "session-plus/provider-header", 91],
+	["settings.general.item", "session-plus/selection-add", 92],
+	["settings.general.item", "session-plus/theme-switch", 93],
+	["settings.general.item", "session-plus/effort-slider", 94],
+	["settings.general.item", "session-plus/open-in-session", 95],
+	["conversation.hero.options", "session-plus/open-in-app", 50],
+];
+
 test("模型目录服务不存在时只降级提供商头部，选文功能仍注册", () => {
 	const { seen } = loadClient({ modelService: false });
-	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91]]);
+	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91], ...SERVICE_FREE_ROWS]);
 });
 
 test("主题服务不存在时整条主题切换不装配，其余功能不受影响", () => {
@@ -129,12 +210,13 @@ test("主题服务不存在时整条主题切换不装配，其余功能不受�
 		["conversation.input.overlay", "provider-header", 90],
 		["conversation.input.overlay", "selection-add", 91],
 		["conversation.input.right", "codex-effort-slider", 40],
+		...SERVICE_FREE_ROWS,
 	]);
 });
 
 test("模型目录服务不存在时滑条与提供商头部都不装配，选文与主题切换照常", () => {
 	const { seen } = loadClient({ modelService: false });
-	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91]]);
+	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91], ...SERVICE_FREE_ROWS]);
 	assert.deepEqual(seen.effects, [
 		"dsh-session-plus: dictionaries",
 		"dsh-session-plus: styles",
@@ -142,17 +224,29 @@ test("模型目录服务不存在时滑条与提供商头部都不装配，选�
 	]);
 });
 
-test("v0.6.0 迁入的滑条不含被移除的设置面板与本地存储", () => {
+test("功能开关不依赖任何可选服务：两个服务都缺席时 5 个设置行仍注册", () => {
+	const { seen } = loadClient({ modelService: false, themeService: false });
+	const rows = seen.registrations.filter(([slot]) => slot === "settings.general.item");
+	assert.equal(rows.length, 5, "设置行必须与服务可用性解耦，否则用户无法再打开功能");
+	assert.equal(seen.registrations.some(([slot]) => slot === "conversation.hero.options"), true);
+});
+
+test("v0.6.0 迁入的滑条不含被移除的设置面板与 vendored 本地存储", () => {
 	const { mod } = loadClient();
 	const vendor = mod.__effortSlider;
 	assert.equal(typeof vendor, "object", "必须导出 __effortSlider 供离线测试使用");
 	const removed = ["writeSettings", "normalizeSettings", "schemaDefaults", "dumpTrace", "traceClear", "installSettingsUi", "openSettingsPanel", "SETTINGS_SCHEMA", "SETTINGS_KEY", "SETTINGS_EVENT"];
 	assert.deepEqual(Object.keys(vendor).filter((key) => removed.includes(key)), [], "被移除的设置/诊断接缝不得再导出");
 	const source = readFileSync(CLIENT_PATH, "utf8");
-	// 设置面板与本地存储整段不迁移：这些标识符不得再出现。
-	for (const gone of ["localStorage", "滑条设置", "复制诊断", "SETTINGS_SCHEMA", "openSettingsPanel", "ces-set__"]) {
+	// 设置面板整段不迁移：这些标识符不得再出现。
+	for (const gone of ["滑条设置", "复制诊断", "SETTINGS_SCHEMA", "openSettingsPanel", "ces-set__"]) {
 		assert.equal(source.includes(gone), false, `${gone} 不应再出现在产物里`);
 	}
+	// v0.7.0 起 localStorage 只服务于「功能开关」；vendored 滑条段内仍不得出现。
+	const vendorStart = source.indexOf("const effortSliderVendor = (() => {");
+	const vendorEnd = source.indexOf("exports.__effortSlider");
+	assert.ok(vendorStart > 0 && vendorEnd > vendorStart, "vendored 滑条段必须可定位");
+	assert.equal(source.slice(vendorStart, vendorEnd).includes("localStorage"), false, "vendored 滑条段不得使用本地存储");
 	// 但必须保留「右键不弹面板」的拦截器：旧版本残留的 document 级监听不得把面板弹到我们滑条上。
 	assert.ok(source.includes("stopImmediatePropagation"), "需要 window 捕获阶段的右键拦截器");
 });

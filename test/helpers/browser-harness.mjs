@@ -122,7 +122,10 @@ export async function browserHarness() {
       },
       get(name) { return ctx[name]; },
     };
-    modules.get('dsh-session-plus').apply(ctx);
+    const plusModule = modules.get('dsh-session-plus');
+    plusModule.apply(ctx);
+    /** v0.7.0 功能开关：供用例在页面内翻转，验证即时生效与残留回收。 */
+    const setFlag = (id, value) => plusModule.__internals.featureFlags.set(id, value);
     const ModelSelect = modules.get('@deepseek-ai/dsh-client-ui-model-selection').ModelSelect;
     const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
     const EFFORTS = [{ id: 'off', name: 'Off' }, { id: 'low', name: 'Low' }, { id: 'high', name: 'High' }, { id: 'max', name: 'Max' }];
@@ -151,6 +154,8 @@ export async function browserHarness() {
     }
     window.fixture = {
       input, directories, errors: [], selects,
+      setFlag,
+      flags: () => plusModule.__internals.featureFlags.snapshot(),
       render(ids = ['main'], legacy = false) {
         for (const id of ids) { if (!input.has(id)) input.set(id, store({ draft: '原有草稿' })); if (!directories.has(id)) directories.set(id, store(state(id))); }
         builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null, ids.map(id => h(Composer, { key: id, id, legacy })))));
@@ -229,7 +234,9 @@ export async function themeHarness() {
       theme,
       get(name) { return ctx[name]; },
     };
-    modules.get('dsh-session-plus').apply(ctx);
+    const plusModule2 = modules.get('dsh-session-plus');
+    plusModule2.apply(ctx);
+    const setFlag = (id, value) => plusModule2.__internals.featureFlags.set(id, value);
 
     const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
     let open = false;
@@ -268,6 +275,8 @@ export async function themeHarness() {
 
     window.fixture = {
       errors: [],
+      setFlag,
+      flags: () => plusModule2.__internals.featureFlags.snapshot(),
       open: () => setOpen(true),
       close: () => setOpen(false),
       isOpen: () => open,
@@ -282,6 +291,160 @@ export async function themeHarness() {
         builtins['react-dom'].flushSync(() => root.unmount());
         for (const dispose of disposers.reverse()) dispose();
       },
+    };
+    render();
+  }, { client }));
+  return { page, errors, close: () => browser.close() };
+}
+
+// —— 夹具三：v0.7.0 新会话页「在应用中打开」按钮 + 通用设置 5 行开关 ——
+/** 1×1 透明 PNG：让图标的 <img> 真正加载成功，从而验证图标路径而不是回退字形。 */
+const ICON_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
+
+export async function v070Harness() {
+  const { browser, page, errors, client } = await launch();
+  // 官方图标路由由 Host 提供；这里给一个真实图片响应，避免 <img> 走 onError 回退。
+  await page.route('**/open-in-app/icon/**', route => route.fulfill({ status: 200, contentType: 'image/png', body: ICON_PNG }));
+  await withCloseOnFailure(browser, page.evaluate(({ client }) => {
+    const builtins = window.testBuiltins;
+    const React = builtins.react;
+    const h = React.createElement;
+    const modules = new Map();
+    window.__ModuleLoader__ = { load: definition => modules.set(definition.id, definition.factory(name => builtins[name])) };
+    (0, eval)(client);
+
+    const labels = {
+      openInTitle: '用 {app} 打开',
+      openInMore: '更多打开方式',
+      openInDefault: '{app}（默认）',
+      openInAppsError: '无法获取应用列表',
+      openInFailed: '打开失败，请重试',
+      openInBusy: '正在打开工作区',
+      'app.finder': '访达',
+      'app.vscode': 'VS Code',
+      'app.warp': 'Warp',
+      featProviderTitle: '模型菜单显示提供商名称',
+      featProviderDesc: '在模型选择菜单顶部实时显示当前模型所属的提供商',
+      featSelectionTitle: '选中文本加入对话',
+      featSelectionDesc: '在聊天内容中选中文字后，用浮动按钮把选中文本以代码块插入输入框开头',
+      featThemeTitle: '账户菜单主题快捷切换',
+      featThemeDesc: '在账户菜单顶部提供三态切换条',
+      featEffortTitle: '推理等级滑条',
+      featEffortDesc: '把模型菜单里的推理等级行换成可拖动的连续滑条',
+      featOpenInSessionTitle: '新建会话页「在应用中打开」按钮',
+      featOpenInSessionDesc: '在尚未开始对话的新会话页标题栏显示工作区打开按钮',
+    };
+    const t = key => labels[key] ?? key;
+
+    const store = value => {
+      const listeners = new Set();
+      return { getSnapshot: () => value, subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn); },
+        set(next) { value = next; for (const fn of listeners) fn(); } };
+    };
+    const sessions = store({ byId: { hero: { cwd: '/Users/Project/workspace' } } });
+
+    const registrations = [];
+    const disposers = [];
+    const opens = [];
+    const fetchCalls = [];
+    let panelOpen = false;
+    let openFails = false;
+    const appsList = ['finder', 'vscode'];
+
+    window.fetch = async (url, init) => {
+      const path = String(url);
+      fetchCalls.push({ path, method: (init && init.method) || 'GET' });
+      if (path.indexOf('/open-in-app/apps') >= 0) {
+        return { ok: true, status: 200, json: async () => ({ apps: appsList }) };
+      }
+      if (path.indexOf('/open-in-app/open') >= 0) {
+        opens.push(JSON.parse(init.body));
+        return { ok: openFails !== true, status: openFails === true ? 500 : 200 };
+      }
+      return { ok: false, status: 404, json: async () => ({}) };
+    };
+
+    const ctx = {
+      effect(fn) { const cleanup = fn(); if (typeof cleanup === 'function') disposers.push(cleanup); return cleanup; },
+      on: () => () => {},
+      locale: { register: () => () => {}, bind: () => key => labels[key] ?? key, subscribe: () => () => {} },
+      slots: {
+        inject: (_name, fn) => fn(),
+        register(spec, Component) {
+          const entry = { spec, Component };
+          registrations.push(entry);
+          return () => { const index = registrations.indexOf(entry); if (index >= 0) registrations.splice(index, 1); };
+        },
+      },
+      sidebarRight: { isExpanded: () => panelOpen },
+      // 只装配不依赖 modelDirectories 的部分：本夹具不渲染模型菜单。
+      inject: (keys, fn) => { if (Array.isArray(keys) && keys.includes('modelDirectories')) return; fn(ctx); },
+      get: name => ctx[name],
+    };
+    ctx.theme = { getTheme: () => ({ preference: 'system' }), setTheme: () => {} };
+    const plus = modules.get('dsh-session-plus');
+    plus.apply(ctx);
+    const setFlag = (id, value) => plus.__internals.featureFlags.set(id, value);
+
+    const bySlot = name => registrations.filter(entry => entry.spec.name === name);
+    let showHero = true;
+
+    function Header() {
+      return h('header', { id: 'header', 'data-slot': 'conversation.session.header' },
+        h('div', { id: 'left-group' },
+          h('button', { type: 'button', id: 'other-1', 'aria-label': 'other one' }, '1'),
+          h('button', { type: 'button', id: 'other-2', 'aria-label': 'other two' }, '2')),
+        // 模拟真实环境：这一组里还可能有别的插件（dsh-better-sidebar）的按钮，
+        // 官方「展开右侧面板」是其中最后一个；面板展开时整组隐藏。
+        h('div', { id: 'corner', 'data-conversation-header-corner': '' },
+          panelOpen ? null : h('button', { type: 'button', id: 'other-pane', 'aria-label': 'add pane' }, 'pane'),
+          panelOpen ? null : h('button', {
+            type: 'button', id: 'expand', 'data-sidebar-right-expand': '', 'aria-label': 'Open right sidebar',
+            onClick: () => { panelOpen = true; render(); },
+          }, 'panel')));
+    }
+
+    function Hero() {
+      return h('div', { id: 'hero', 'data-slot': 'conversation.hero.options' },
+        bySlot('conversation.hero.options').map(({ spec, Component }) => h(Component, {
+          ...(spec.inject ? spec.inject('hero') : {}), key: spec.id, sessionId: 'hero', t,
+          useSessions: selector => selector(sessions.getSnapshot()),
+        })));
+    }
+
+    function Settings() {
+      // 真实设置页把 settings.general.item 的全部登记按 order 统一排序后再渲染，
+      // 因此这里也把两条官方行（90 = 上传 Session Log、100 = 当前版本）混进同一个
+      // 列表里排序，才能验证我们那 5 行确实落在两者之间。
+      const rows = bySlot('settings.general.item').map(({ spec, Component }) => ({
+        order: spec.order,
+        node: h(Component, { ...(spec.inject ? spec.inject() : {}), key: spec.id, t }),
+      }));
+      const entries = [
+        { order: 90, node: h('div', { id: 'row-session-log', 'data-official-row': 'session-log' }, 'Session Log') },
+        { order: 100, node: h('div', { id: 'row-version', 'data-official-row': 'version' }, 'Version') },
+        ...rows,
+      ].sort((left, right) => left.order - right.order);
+      return h('div', { id: 'settings' }, entries.map(entry => entry.node));
+    }
+
+    const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
+    const render = () => {
+      builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null, h(Header), showHero ? h(Hero) : null, h(Settings))));
+    };
+
+    window.fixture = {
+      errors: [],
+      opens,
+      fetchCalls,
+      setFlag,
+      flags: () => plus.__internals.featureFlags.snapshot(),
+      setPanel(open) { panelOpen = open === true; render(); },
+      isPanelOpen: () => panelOpen,
+      removeHero() { showHero = false; render(); },
+      restoreHero() { showHero = true; render(); },
+      setOpenFails(value) { openFails = value === true; },
+      unmount() { builtins['react-dom'].flushSync(() => root.unmount()); for (const dispose of disposers.reverse()) dispose(); },
     };
     render();
   }, { client }));

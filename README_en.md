@@ -2,14 +2,14 @@
 
 # dsh-session-plus
 
-**Session enhancement plugin: live model provider in the model menu · turn selected text into a code block at the start of the input · three-state theme switch at the top of the account menu · Codex-style reasoning-effort slider in the official model menu**
+**Session enhancement plugin: live model provider in the model menu · turn selected text into a code block · three-state theme switch in the account menu · Codex-style reasoning-effort slider · an “Open in app” button on the new-session page — each one toggleable in Settings → General**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.6.0-blue?style=for-the-badge)
+![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.3-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.7.0-blue?style=for-the-badge)
 
 </div>
 
@@ -17,15 +17,17 @@
 <p align="center"><img src="docs/preview.gif" alt="dsh-session-plus preview" width="720"></p>
 -->
 
-**dsh-session-plus** is a session enhancement plugin for [DeepSeek Harness](https://github.com/deepseek-ai) (DSH) that adds four lightweight boosts:
+**dsh-session-plus** is a session enhancement plugin for [DeepSeek Harness](https://github.com/deepseek-ai) (DSH) that adds five lightweight boosts plus one switch panel:
 
 - 🏷 **Show** the active model provider at the top of the model selection menu, in real time
 - ✂️ Turn any selected text into a Markdown code block, **prepended** to the input, with one click
 - 🎚 A `System / Light / Dark` **theme shortcut** at the very top of the account menu (react-bits Rubber Segment motion)
 - 🎛 A **Codex-style continuous slider** replacing the official `Reasoning effort` row (per-level colours plus a max-level energy layer, ported from `dsh-codex-effort-slider`)
+- 🪟 The **Open In… split button** on the new-session page header, which the official UI only renders once a conversation exists (hidden while the right panel is open)
+- ⚙️ **One switch per feature** under Settings → General, applied instantly
 
 > [!NOTE]
-> **As of v0.4.0, "Open Workspace" has been removed from this plugin.** DSH `0.1.5-rc.1` ships a richer built-in **Open In…** split button (top-right of the session header) that opens the session workspace in an installed directory app, so this plugin no longer duplicates it. The provider header and selection insertion remain available.
+> **As of v0.4.0, "Open Workspace" is no longer implemented by this plugin.** DSH ships its own richer **Open In…** split button in the session header; since **v0.7.0** this plugin simply mirrors that official button onto the **new-session page** (where the official utilities row is not rendered), with identical behaviour.
 
 ## 📑 Table of Contents
 
@@ -101,9 +103,36 @@ flowchart LR
 | Seat in sync | The effort text on the composer model button and the row value are tinted per level; the `Off` level keeps the official grey |
 | Reliable writes | `directory.select({ provider, model, reasoningEffort })` with same-level dedupe, in-flight merge, 120 ms throttling, and a 10 s timeout rollback; failures show an inline message instead of pretending to succeed |
 | Motion profile | Fixed to the upstream `full` motion and **unaffected by the OS reduce-motion setting**; ticks fixed to `highlight reached levels` |
-| No settings panel | This plugin has no settings panel: right-click, long-press, and the context-menu key never open a popup. A window-capture guard also stops document-level listeners left over from the previous version from opening theirs |
+| No context-menu panel | The slider itself never opens a right-click, long-press or context-menu popup, and a window-capture guard also stops leftover document-level listeners from the previous version. To turn the slider on or off, use Settings → General |
 | Safe fallback | When the official row, the model effort levels, or the session directory is missing, nothing happens and the official menu stays as-is |
 | Attribution | Ported from MIT-licensed `dsh-codex-effort-slider@1.1.3`; see [NOTICE.md](NOTICE.md) for provenance and the exact changes |
+
+### 5️⃣ "Open in app" Button on the New-Session Page
+
+| Trait | Behaviour |
+|---|---|
+| Fills an official gap | The official Open In… split button only exists in the header of a session that already has messages; on the **new-session page** that utilities row is not rendered, so this plugin renders the same split button there |
+| Exact placement | Anchored to the group that holds the official "expand right panel" button and inserted as that group's **leftmost** control (other plugins' buttons, e.g. `dsh-better-sidebar`, sit to its right), with a fixed gap on the left |
+| Same behaviour | The left cell shows the current default app and opens the session workspace in it; the chevron lists installed apps, remembers the pick, and opens immediately |
+| Shared preference | Read-only inheritance from the official `dsh.open-in-app.choice` on first use; this plugin records its own choice under `dsh.session-plus.open-in-app.v1` and never rewrites the official value |
+| Steps aside | As soon as the first message is sent the plugin button unmounts, leaving only the official one — never duplicated |
+| Panel exclusion | Hidden while the right panel is expanded, restored the moment it collapses |
+| No workspace, no button | Hidden when the session has no workspace directory (`cwd`) yet |
+| Failure feedback | A "Could not open. Try again." notice appears when the host refuses, and disappears after 3 seconds |
+| Safe fallback | The whole button is not rendered when the official apps route is unavailable or returns an empty list (same as the official behaviour); other features are unaffected |
+| Attribution | Button copy and the 34 application names mirror MIT-licensed `@deepseek-ai/dsh-client-ui-open-in-app`; see [NOTICE.md](NOTICE.md) |
+
+### 6️⃣ Per-Feature Switches in Settings → General
+
+| Trait | Behaviour |
+|---|---|
+| Position | Settings → General, directly **below** the official "Upload Session Log when using the official model API" row and above the version row |
+| Five independent switches | Provider header · selection insertion · account-menu theme switch · effort slider · new-session button — one switch each |
+| Instant | Turning one off removes its UI and injections immediately (timers, listeners, DOM, styles are all released); turning it back on restores it — no reload, no restart |
+| Official look | The same geometry and tokens as the official switch (36×20 track, round thumb, `--dsw-alias-brand-primary` when on, `.12s` transition) |
+| Native fallback | Turning the effort slider off restores the official `Reasoning effort` row exactly (height, wrapping, padding) |
+| On by default | Upgrading changes nothing; the preference lives in browser `localStorage` under `dsh.session-plus.features.v1` |
+| Fault-tolerant | Unavailable or corrupt `localStorage` falls back to "everything on" in memory without throwing |
 
 ---
 
@@ -209,15 +238,32 @@ dsh plugin --profile web remove dsh-session-plus
 - **Writes**: releasing (or switching with the keyboard) writes back to the host — the same preference as choosing a level in the official `Reasoning effort` sub-pane. Failures or timeouts roll the display back and show an inline message.
 - **Edges**: if the official model menu changes shape, or the current model has no effort levels, the slider does not appear and the official menu is unaffected.
 
+### "Open in app" on the New-Session Page
+
+- **Position**: a new-session page opened from a workspace (blank, no messages): the **leftmost** control of the button group at the right of the header.
+- **Interaction**: the left cell opens the workspace in the current default app; the chevron picks another installed app and remembers the choice.
+- **Visibility**: hidden while the right panel is open and restored when it collapses; once the first message is sent the official button takes over.
+- **Shortcut**: shared with the official command (default ⌥⌘O) and shown in the hover tooltip.
+- **Failure**: a "Could not open. Try again." notice when the host or transport fails.
+- **Edges**: hidden when no local application is available, or the session has no workspace directory yet.
+
+### Settings Switches
+
+- **Position**: Settings → General, below the official "Upload Session Log" row.
+- **Usage**: flip a switch; the related UI disappears immediately and comes back immediately.
+- **Persistence**: browser `localStorage` (`dsh.session-plus.features.v1`). If the local server port — and therefore the page origin — changes, the preference resets to the default "all on"; that is why "on" is the default.
+
 ### Supported Scope
 
 | Item | Scope |
 |---|---|
-| DSH | Desktop `0.2.1-rc.2`; retains legacy Web `menu` / textarea compatibility |
+| DSH | Desktop `0.2.1-rc.3` (verified against that build); retains legacy Web `menu` / textarea compatibility |
 | OS | Official Desktop frontend verified in browser fixtures; native Windows Desktop untested |
 | Browser | Modern Chrome / Safari / Edge |
 | Theme switch | Relies on the official `settings.launcher` seat and the `role="menu"` popup structure; degrades silently when they change |
 | Effort slider | Relies on the official `Reasoning effort` row (`button[role="menuitem"]` plus its label/value spans) and the `modelDirectories` service; degrades silently when they change |
+| New-session button | Relies on the official `conversation.hero.options` seat, the header's `[data-conversation-header-corner]` container, and the host routes `GET /open-in-app/apps` / `POST /open-in-app/open`; renders nothing if any is missing |
+| Settings switches | Relies on the official `settings.general.item` seat; without it the five rows do not appear and everything else still works |
 
 ---
 
@@ -227,7 +273,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-**51 unit tests + 19 browser regressions**. Browser tests require the official DSH runtime and Playwright supplied by the verification environment; plain `npm test` skips those 19 cases. Enable the isolated fixtures with the following command (no model calls):
+**79 unit tests + 29 browser regressions**. Browser tests require the official DSH runtime and Playwright supplied by the verification environment; plain `npm test` skips those 29 cases. Enable the isolated fixtures with the following command (no model calls):
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -256,7 +302,11 @@ Coverage:
 - **Theme switch (real Menu primitive)**: injection point and panel fit, single write per click without closing the menu, single commit per drag, arrow keys and focus, close cleanup and reopen state, external theme changes, reduced-motion landing, no injection into other popups
 - **Effort slider (offline harness)**: injection into the official row (padding / wrap / height, official spans and chevron preserved), level mapping and detents, energy and particle maths, motion engine convergence without overshoot, write-back contract (single commit, correct `provider`/`model`/`reasoningEffort`, dedupe), rollback plus inline message on failure, per-row restoration on close, fail-open when the menu is closed, seat tinting, and the i18n hook falling back to the upstream copy
 - **Effort slider (real `ModelSelect`)**: slider fills the second line of the official row, a drag to the far right writes `max` once and keeps the menu open, closing the menu restores the row's inline styles, End / ArrowLeft write back through the keyboard, right-click opens no settings panel even with a foreign document-level listener installed, and a model without effort levels gets no slider at all
-- **Browser-half registration surface**: two `conversation.input.overlay` registrations plus one `conversation.input.right` entry, fifteen locale keys, dictionary and style effects intact, session-header / `shell.overlay` registrations verifiably gone, and graceful degradation when the model or theme service is missing
+- **Feature switches (offline)**: all-on defaults, `localStorage` write/read-back, tolerance for corrupt JSON / non-objects / illegal values, write failures in private mode, unknown ids ignored, subscription dedupe and unsubscribe, `reset` re-read, plus row ordering and bilingual copy completeness
+- **Open in app (offline)**: the three host-route constants, request body and failure results, one-shot app-directory read with empty / non-2xx / offline fallbacks, preference inheritance (own key first, official key as a bare string or JSON), application-name fallback, the four-condition visibility truth table, and the service/DOM dual path of the panel-expanded probe
+- **Open in app (real DOM)**: appears on the new-session page as the leftmost control of that group, unmounts together with its host node once a message is sent, hides on panel expand and returns on collapse, correct POST body from the primary button, app-menu switching that persists the preference, and a failure notice that auto-dismisses
+- **Feature switches (real DOM)**: the five rows land below the official upload row in a stable order; disabling the provider header / selection overlay / effort slider / theme strip / new-session button removes it immediately and re-enabling restores it (including item-by-item restoration of the official row's height, wrapping and padding when the slider is switched off)
+- **Browser-half registration surface**: two `conversation.input.overlay` registrations, one `conversation.input.right`, one `conversation.hero.options` and five `settings.general.item` rows, sixty-five locale keys, dictionary and style effects intact, session-header / `shell.overlay` registrations verifiably gone, and graceful degradation when the model or theme service is missing
 
 ---
 
@@ -265,7 +315,7 @@ Coverage:
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js        # Browser half: provider header + selected-text add + theme switch + effort slider (single bundle)
+│   ├── client.js        # Browser half: provider header + selected-text add + theme switch + effort slider + new-session button + switch panel (single bundle)
 │   ├── index.js         # Host half: deliberately empty apply (lets dsh-client-modules discover the browser half)
 │   ├── insert.js        # Selected text → code-block composition (unit-testable)
 │   ├── label.js         # Provider-label pure function (unit-testable)
@@ -274,7 +324,7 @@ dsh-session-plus/
 ├── test/                # unit tests and official-frontend browser fixtures
 ├── cordis.patch.yml
 ├── CHANGELOG.md
-├── NOTICE.md            # third-party provenance and MIT notice (ported from dsh-codex-effort-slider)
+├── NOTICE.md            # third-party provenance and MIT notices (effort-slider port + official open-in-app copy/visual mirror)
 ├── package.json
 └── LICENSE
 ```
@@ -285,7 +335,7 @@ dsh-session-plus/
 
 | Category | Technology |
 |---|---|
-| Runtime | DeepSeek Harness (DSH `0.2.1-rc.2`) · Cordis plugin system |
+| Runtime | DeepSeek Harness (DSH `0.2.1-rc.3`) · Cordis plugin system |
 | Language | Plain JavaScript (ESM, no build step) |
 | Browser side | DSH client runtime (`@deepseek-ai/dsh-client-*`), injected as a single bundle |
 | Host side | No runtime dependencies: an empty `apply` host row, kept so `dsh-client-modules` discovers the browser half |
@@ -304,6 +354,8 @@ dsh-session-plus/
 - [x] Remove "Open Workspace" (superseded by DSH's built-in Open In…, other two features retained)
 - [x] Account-menu theme shortcut (Rubber Segment, drag momentum, reduced motion)
 - [x] Reasoning-effort slider (ported from `dsh-codex-effort-slider`: continuous drag, one colour per level, max-level energy layer)
+- [x] "Open in app" button on the new-session page (same split button, leftmost in the group, panel exclusion, shared preference)
+- [x] Per-feature switches in Settings → General (five independent toggles, instant effect, native fallback, `localStorage` persistence)
 - [ ] Escaping / tolerance for fences inside the selected text
 - [ ] Insert position options (start / end / cursor)
 
@@ -313,4 +365,9 @@ dsh-session-plus/
 
 This project is released under the [MIT](LICENSE) license (SPDX: `MIT`).
 
-The reasoning-effort slider is ported from the MIT-licensed `dsh-codex-effort-slider`; see [NOTICE.md](NOTICE.md) for the third-party copyright notice and the exact scope of changes.
+Specifically:
+
+- the reasoning-effort slider is ported from the MIT-licensed `dsh-codex-effort-slider`;
+- the new-session button mirrors the visual parameters, button copy and the 34 application names of the MIT-licensed official package `@deepseek-ai/dsh-client-ui-open-in-app` (no code was copied; only its host HTTP route contract is reused).
+
+See [NOTICE.md](NOTICE.md) for the third-party copyright notices and the exact scope of changes.
