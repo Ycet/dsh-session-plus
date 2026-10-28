@@ -71,3 +71,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+---
+
+## @deepseek-ai/dsh-client-ui-primitives（DeepSeek Harness）
+
+- **来源**：DeepSeek Harness 官方客户端原语包 `@deepseek-ai/dsh-client-ui-primitives`，随 DSH 桌面版 `0.2.1-rc.3` 核对
+- **使用位置**：`lib/client.js` 中「功能 6：通用设置开关」的 `FeatureToggleRow`（v0.7.1 起），以及 `test/session-plus-v070-browser.test.mjs` 的样式比对用例
+- **使用方式**：**运行时直接 `require` 官方原语并渲染其 `Switch` 组件**（与官方「在使用官方模型 API 时上传 Session Log」行同一个组件、同一份 CSS），未复制其源代码；仅在原语不可用的旧运行时退回自绘开关，该兜底样式的几何与 token 参考官方 `Switch.module.css`（36×20 轨道、16px 圆形滑块、`corner-shape:round`）。
+- **许可证**：MIT（文本同上，Copyright (c) 2026 DeepSeek）

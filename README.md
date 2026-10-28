@@ -9,7 +9,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.3-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.7.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.7.1-blue?style=for-the-badge)
 
 </div>
 
@@ -23,8 +23,8 @@
 - ✂️ 选中任意文本，一键以 Markdown 代码块形式**加入输入框开头**
 - 🎚 账户菜单最上方提供 `跟随系统 / 浅色 / 深色` **主题快捷切换**（react-bits Rubber Segment 动效）
 - 🎛 官方模型菜单「推理等级」一行改造为 **Codex 风格连续滑条**（一档一色 + 最高档能量层，迁自 `dsh-codex-effort-slider`）
-- 🪟 新建会话页标题栏补上 **Open In… 分体按钮**（官方只在对话页提供；右侧面板展开时自动隐藏）
-- ⚙️ 「设置 → 通用」里为以上**每一项**提供独立开关，即时生效、可随时关掉
+- 🪟 新建会话页标题栏补上 **Open In… 分体按钮**（官方只在对话页提供；固定定位在整组按钮最左侧，右侧面板展开时自动隐藏）
+- ⚙️ 「设置 → 通用」里为以上**每一项**提供独立开关（直接复用官方 `Switch` 组件，样式与官方行一致），即时生效、可随时关掉
 
 > [!NOTE]
 > **自 v0.4.0 起，「打开工作区」不再由本插件独立实现。** DSH 已内置功能完整的 **Open In…** 分体按钮（会话页头部右上角）；本插件只做两件事：不再重复提供该能力，并在 **v0.7.0** 把这个官方按钮**补到新建会话页**（那里官方不渲染该行工具区），行为与官方完全一致。
@@ -112,7 +112,9 @@ flowchart LR
 | 特性 | 说明 |
 |---|---|
 | 补齐官方缺口 | 官方只把 Open In… 分体按钮放在**已有对话**的会话页头部；**新建会话页**（已选工作区、尚未发消息）那一行工具区不渲染，本插件在那里补一个同款按钮 |
-| 位置精确 | 以官方「展开右侧面板」按钮所在的那组按钮为基准，插在整组**最左侧**（其它插件如 `dsh-better-sidebar` 的按钮排在它右侧），左侧留出固定间距 |
+| 位置精确 | 以官方「展开右侧面板」按钮所在行为锚点，**固定定位**在整组按钮（官方按钮 + `dsh-better-sidebar` / `dsh-awesome-hud` 的浮动按钮）的**最左侧**，与最近按钮保持 8px 间距；宿主挂 `document.body`，不占用标题栏排版，因此不会挤占其它插件的测量空间、也不会与它们叠压 |
+| 随动重测 | 按钮簇增删、窗口缩放、侧栏开合后自动重新落位（`MutationObserver` + `resize` + 500ms 兜底轮询）；落位前隐藏，避免首帧闪到视口左上角 |
+| 垂直对齐 | 与官方 28px 角落按钮垂直居中对齐（按锚点实际矩形计算，兼容 Windows 原生标题栏高度） |
 | 行为一致 | 左格=当前默认应用图标，点击用该应用打开当前会话的工作区；右格箭头弹出已安装应用列表，选择后记住并立即打开 |
 | 偏好共享 | 首次从官方 `dsh.open-in-app.choice` **只读**继承默认应用；本插件用 `dsh.session-plus.open-in-app.v1` 记录自己的选择，绝不改写官方状态 |
 | 自动让位 | 发出第一条消息后（页面进入对话态）本插件按钮立即卸载，只剩官方那一个，永不重复 |
@@ -129,7 +131,7 @@ flowchart LR
 | 位置 | 「设置 → 通用」，紧接官方「在使用官方模型 API 时上传 Session Log」行**下方**、「当前版本」行上方 |
 | 五项独立 | 提供商头部 / 选中文本加入对话 / 账户菜单主题切换 / 推理等级滑条 / 新建会话页按钮，各一个开关，互不影响 |
 | 即时生效 | 关掉后对应 UI 与注入立即移除（定时器、监听、DOM、样式一并回收），重新打开立即回来，无需刷新或重启 |
-| 官方同款 | 与官方开关同一套几何与 token（36×20 轨道、圆形滑块、选中色 `--dsw-alias-brand-primary`、`.12s` 位移） |
+| 官方同款 | 直接复用官方 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch` 组件——与官方设置行同一组件、同一份 CSS（含 `corner-shape:round`），计算样式逐项一致；旧运行时没有该原语时退回自绘开关（CSS 镜像官方） |
 | 原生回退 | 关闭「推理等级滑条」后，官方原生「推理等级」行原样回来（行高、折行、内边距全部还原） |
 | 默认全开 | 升级后行为保持不变；偏好存在浏览器 `localStorage` 的 `dsh.session-plus.features.v1` |
 | 容错 | `localStorage` 不可用或内容损坏时退回「全开」并在内存生效，不报错 |
@@ -147,7 +149,7 @@ dsh plugin --profile web add "dsh-session-plus@link:<absolute-path-to-plugin>"
 
 ### 桌面端安装
 
-当前版本：**v0.6.0**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
+当前版本：**v0.7.1**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
 
 ```bash
 "<path-to-desktop-cli>" plugin --profile desktop add "dsh-session-plus@link:<absolute-path-to-plugin>"
@@ -183,6 +185,10 @@ npm exec @deepseek-ai/dsh web
 
 <details>
 <summary>点击展开</summary>
+
+**v0.7.1**：修掉两个 UI 问题。① 「设置 → 通用」的 5 个功能开关改为直接复用官方 `Switch` 组件——此前自绘开关缺少 `corner-shape:round`，在 DSH 0.2.1-rc.3 的全局 `corner-shape: superellipse(1.5)` 下被渲染成圆角方形，与官方开关不一致；② 新建会话页「在应用中打开」按钮改为 `document.body` 上的固定定位：以官方展开按钮所在行为锚点，始终排在整组按钮最左侧，不再塞进标题栏角落容器挤占 `dsh-better-sidebar` / `dsh-awesome-hud` 浮动按钮的测量空间（那会让两个插件互相叠压）。浏览器夹具新增两个邻居站位块与官方 `Switch` 参照件，单元测试 79 → 85、浏览器回归 29 → 31。
+
+**v0.7.0**：新增新建会话页「在应用中打开」分体按钮（补齐官方空会话页不渲染该行的缺口，复用宿主路由与偏好继承）与「设置 → 通用」里的 5 个逐项功能开关（`settings.general.item` 席位、即时生效、`localStorage` 持久化），并新增对应离线/浏览器用例。
 
 **v0.6.0**：新增官方模型菜单「推理等级」行的 Codex 风格滑条（迁自 MIT 许可的 `dsh-codex-effort-slider@1.1.3`：连续跟手、一档一色、最高档能量层与星尘、座席同步着色、写回去重与超时回滚）；新增离线测试台与 10 项行为断言、6 项真实 `ModelSelect` 浏览器用例，并加一层右键拦截保证不会弹出任何设置面板，并补 `NOTICE.md` 保留上游署名。
 
@@ -240,7 +246,7 @@ dsh plugin --profile web remove dsh-session-plus
 
 ### 新建会话页「在应用中打开」
 
-- **位置**：点侧边栏某个工作区进入的新会话页（空白、未发消息），标题栏右侧那组按钮的**最左侧**。
+- **位置**：点侧边栏某个工作区进入的新会话页（空白、未发消息），标题栏右侧那组按钮的**最左侧**（固定定位；官方展开按钮、`dsh-better-sidebar` 与 `dsh-awesome-hud` 的浮动按钮都在它右侧，8px 间距、互不重叠）。
 - **操作**：点左格用当前默认应用打开该工作区；点右格从已安装应用里选一个，选择会被记住。
 - **隐藏时机**：打开右侧面板时隐藏、收起后恢复；发出第一条消息后不再显示（对话页由官方那一个按钮接管）。
 - **快捷键**：与官方命令共用（默认 ⌥⌘O），悬停提示里显示当前键位。
@@ -250,7 +256,7 @@ dsh plugin --profile web remove dsh-session-plus
 ### 通用设置开关
 
 - **位置**：「设置 → 通用」，官方「在使用官方模型 API 时上传 Session Log」行下方。
-- **用法**：点右侧开关即可；关闭后相关 UI 立刻消失，重新打开立刻回来。
+- **用法**：点右侧开关即可；开关是官方 `Switch` 组件，与官方设置行外观一致；关闭后相关 UI 立刻消失，重新打开立刻回来。
 - **持久化**：偏好保存在浏览器 `localStorage`（键 `dsh.session-plus.features.v1`）。若本地服务端口变化导致页面 origin 改变，偏好会回到默认「全开」——这是浏览器存储的固有限制，故默认值刻意选为「全开」。
 
 ### 支持范围
@@ -261,8 +267,8 @@ dsh plugin --profile web remove dsh-session-plus
 | 平台 | 官方桌面前端由浏览器夹具验证；Windows 原生桌面未实测 |
 | 主题切换 | 依赖官方 `settings.launcher` 席位与 `role="menu"` 弹层结构，结构变化时静默降级 |
 | 推理等级滑条 | 依赖官方模型菜单「推理等级」行（`button[role="menuitem"]` + label/value span）与 `modelDirectories` 服务，结构变化时静默降级 |
-| 新建会话页按钮 | 依赖官方 `conversation.hero.options` 席位、标题栏 `[data-conversation-header-corner]` 容器，以及宿主路由 `GET /open-in-app/apps`、`POST /open-in-app/open`；任一缺失即静默不渲染 |
-| 通用设置开关 | 依赖官方 `settings.general.item` 席位；席位不存在时 5 行开关不出现，其余功能照常 |
+| 新建会话页按钮 | 依赖官方 `conversation.hero.options` 席位、标题栏官方「展开右侧面板」按钮（`[data-sidebar-right-expand]`，及其所在的 `[data-conversation-header-corner]` 容器）作为锚点，以及宿主路由 `GET /open-in-app/apps`、`POST /open-in-app/open`；任一缺失即静默不渲染。按钮是 `document.body` 上的固定定位节点，不依赖角落容器的排版 |
+| 通用设置开关 | 依赖官方 `settings.general.item` 席位与官方 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch`（原语缺失时退回自绘开关）；席位不存在时 5 行开关不出现，其余功能照常 |
 | 浏览器 | 现代 Chrome / Safari / Edge |
 
 ---
@@ -273,7 +279,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-共 **79 项单元测试 + 29 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 29 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
+共 **85 项单元测试 + 31 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 31 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -303,9 +309,9 @@ node --test test/*.test.mjs
 - **推理等级滑条（离线台）**：注入进官方那一行（内距 / 折行 / 高度，官方 span 与 chevron 保留）、档位映射与滞回吸附、能量与粒子数学、运动引擎收敛且无过冲、写回契约（单次提交、参数正确、同档去重）、失败回滚与行内提示、关菜单逐项还原、关菜单时 fail-open、座席着色、本地化回退
 - **推理等级滑条（真实 ModelSelect）**：滑条铺满官方行的第二行、拖到最右端只写一次 `max` 且菜单保持打开、关闭后行内样式还原、键盘 End / ArrowLeft 切换并写回、右键不弹出任何设置面板（含拦截 document 上同类监听）、模型没有推理档位时不注入
 - **功能开关（离线）**：默认全开、`localStorage` 读写与回读、损坏 JSON / 非对象 / 非法值容错、隐私模式写入失败容错、未知 id 忽略、订阅去重与退订、`reset` 重读、设置行 order 与中英文案键完整性
-- **在应用中打开（离线）**：三个宿主路由常量、请求体与失败返回、应用目录只读一次与空列表 / 非 2xx / 断网降级、偏好继承（自有键优先、官方键裸字符串与 JSON 两种写法）、应用名回退、四条可见性条件真值表、面板展开判定的服务与 DOM 双通道
-- **在应用中打开（真实 DOM）**：空会话页出现且排在该组按钮最左侧、发出消息后卸载且不残留宿主节点、右侧面板展开隐藏 / 收起恢复、主按钮请求体正确、应用菜单切换并写入偏好、失败提示自动消失
-- **功能开关（真实 DOM）**：5 行开关落在官方上传行之后且顺序稳定；关闭提供商头部 / 选文浮层 / 推理滑条 / 主题三态条 / 新会话按钮后即时移除，重新开启即时恢复（含滑条关闭后官方行的行高、折行、内边距逐项还原）
+- **在应用中打开（离线）**：三个宿主路由常量、请求体与失败返回、应用目录只读一次与空列表 / 非 2xx / 断网降级、偏好继承（自有键优先、官方键裸字符串与 JSON 两种写法）、应用名回退、四条可见性条件真值表、面板展开判定的服务与 DOM 双通道、按钮簇落点几何（最左侧 8px 间距 / 跨行按钮忽略 / 极窄窗口贴边 / 锚点或尺寸缺失返回 null）
+- **在应用中打开（真实 DOM）**：空会话页出现且固定定位在整组按钮最左侧（`dsh-better-sidebar` / `dsh-awesome-hud` 站位块在右侧且不重叠、8px 间距、垂直居中）、邻居按钮消失后重新贴齐、发出消息后卸载且不残留宿主节点、右侧面板展开隐藏 / 收起恢复、主按钮请求体正确、应用菜单切换并写入偏好、失败提示自动消失
+- **功能开关（真实 DOM）**：5 行开关落在官方上传行之后且顺序稳定，开关复用官方 `Switch` 且与官方参照件的计算样式逐项一致；关闭提供商头部 / 选文浮层 / 推理滑条 / 主题三态条 / 新会话按钮后即时移除，重新开启即时恢复（含滑条关闭后官方行的行高、折行、内边距逐项还原）
 - **浏览器半区注册面**：`conversation.input.overlay` 两条 + `conversation.input.right` 一条 + `conversation.hero.options` 一条 + `settings.general.item` 五行注册、六十五个词典键、样式 effect、模型服务 / 主题服务缺失时的降级
 
 ---
@@ -354,8 +360,8 @@ dsh-session-plus/
 - [x] 移除「打开工作区」（DSH 已内置 Open In… 取代，保留另外两项功能）
 - [x] 账户菜单主题快捷切换（Rubber Segment、拖拽惯量、减弱动效）
 - [x] 推理等级滑条（迁自 `dsh-codex-effort-slider`：连续跟手、一档一色、最高档能量层）
-- [x] 新建会话页「在应用中打开」按钮（同款分体按钮、排在按钮组最左、面板互斥、偏好继承）
-- [x] 通用设置逐项开关（5 项独立、即时生效、原生回退、`localStorage` 持久化）
+- [x] 新建会话页「在应用中打开」按钮（同款分体按钮、固定定位在按钮组最左且不与其它插件叠压、面板互斥、偏好继承）
+- [x] 通用设置逐项开关（5 项独立、复用官方 `Switch`、即时生效、原生回退、`localStorage` 持久化）
 - [ ] 选中文本内含围栏时的转义 / 容错处理
 - [ ] 插入位置可选（开头 / 末尾 / 光标处）
 
@@ -368,6 +374,7 @@ dsh-session-plus/
 其中：
 
 - 「推理等级滑条」迁移自 MIT 许可的 `dsh-codex-effort-slider`；
-- 「新建会话页按钮」的视觉参数、按钮文案与 34 个应用显示名镜像自 MIT 许可的官方包 `@deepseek-ai/dsh-client-ui-open-in-app`（未复制其代码，仅复用其宿主 HTTP 路由契约）。
+- 「新建会话页按钮」的视觉参数、按钮文案与 34 个应用显示名镜像自 MIT 许可的官方包 `@deepseek-ai/dsh-client-ui-open-in-app`（未复制其代码，仅复用其宿主 HTTP 路由契约）；
+- 「设置 → 通用」开关在运行时直接复用 MIT 许可的官方原语 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch`（未复制代码），仅在旧运行时退回自绘开关，其兜底 CSS 几何参数参考官方 `Switch.module.css`。
 
 第三方版权声明与改动范围见 [NOTICE.md](NOTICE.md)。

@@ -4,6 +4,52 @@
 
 ---
 
+## v0.7.1
+
+### 中文
+
+**修复 1：通用设置开关样式与官方对齐**
+
+- 现象：「设置 → 通用」里本插件 5 个开关是深色胶囊 + 略带方角的白色滑块，与官方「在使用官方模型 API 时上传 Session Log」行的开关（正圆滑块）观感不一致。
+- 根因：DSH 0.2.1-rc.3 的主题层全局设置了 `corner-shape: superellipse(1.5)`（`:root{--dsw-corner-shape:…}` 加 `*,:before,:after{corner-shape:var(--dsw-corner-shape)}`）。官方 `Switch` 组件显式写了 `corner-shape:round` 抵消它，而 v0.7.0 的自绘开关没有写，于是圆角/胶囊被画成「超椭圆」。
+- 修复：开关本体改为直接复用官方 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch` 组件（与官方行同一组件、同一份 CSS）；旧运行时没有该原语时退回自绘开关，CSS 逐条镜像官方（含 `corner-shape:round`、`--dsw-alias-label-primary-foreground` 滑块底色、未选中态的 `--dsw-alias-switch-thumb` 覆盖与 focus ring 变量）。
+- 验证：浏览器夹具增加一个官方 `Switch` 参照件，逐项比较宽度 / 高度 / 内边距 / 圆角 / 背景色 / `corner-shape` / 滑块尺寸与位移等计算样式，全部一致。
+
+**修复 2：新建会话页「在应用中打开」按钮重新定位**
+
+- 现象：新建会话页标题栏右侧那排按钮里，本插件按钮夹在 `dsh-better-sidebar` 与 `dsh-awesome-hud` 的浮动按钮之间；两个插件各自按官方锚点测量位置，本插件插在流内会挤占它们的测量空间，导致两个插件按钮互相叠压。
+- 修复：宿主节点改为 `document.body` 上的 `position:fixed` 节点，不再塞进标题栏角落容器：以官方「展开右侧面板」按钮所在行为锚点，收集同一行可见按钮（官方按钮、`[data-dsh-dock-fallback]`、`[data-hud-float]`、角落容器里的其它按钮）的矩形，落在整簇按钮最左侧并保持 8px 间距；垂直方向与官方 28px 按钮居中对齐；落位前隐藏，落位后显示。
+- 随动：`MutationObserver` + `resize` + 500ms 兜底轮询重新测量（与这一排其它插件同一节奏），邻居按钮出现/消失、窗口缩放、侧栏开合都能跟上；右侧面板展开时仍整体隐藏。
+- 测试：`test/open-in-app.test.mjs` 新增 6 项落点几何用例；`test/session-plus-v070-browser.test.mjs` 扩充为 8 项（含 better-sidebar / awesome-hud 站位块不重叠、邻居消失后重新贴齐、官方 `Switch` 计算样式比对）。单元测试 79 → 85，浏览器回归 29 → 31。
+
+**工程**
+
+- `lib/client.js`：新增官方 primitives 的 `Switch` 复用与自绘兜底；功能 5 的 portal 落点从「角落容器首位」改为「body 固定定位 + 整簇最左」；新增 `placeClusterButton` 纯函数与按钮簇选择器常量，并挂到 `__internals` 供离线测试。
+- `lib/index.js`、`cordis.patch.yml`、`package.json` 的 `dsh.client.inject` 未改动；`NOTICE.md` 增补官方 `@deepseek-ai/dsh-client-ui-primitives` 的 MIT 运行时依赖说明。
+
+### English
+
+**Fix 1: Settings switches now match the official style**
+
+- Symptom: the five Settings → General switches were dark capsules with a slightly squared white thumb, unlike the official switch on the "Upload Session Log…" row (perfectly round thumb).
+- Root cause: DSH 0.2.1-rc.3's theme layer sets a global `corner-shape: superellipse(1.5)` (`:root{--dsw-corner-shape:…}` plus `*,:before,:after{corner-shape:var(--dsw-corner-shape)}`). The official `Switch` explicitly sets `corner-shape:round` to cancel it; the v0.7.0 self-drawn switch did not, so its capsule and thumb were painted as superellipses.
+- Fix: render the official `@deepseek-ai/dsh-client-ui-primitives` `Switch` directly (same component and CSS as the official rows); on older runtimes fall back to a self-drawn switch whose CSS mirrors the official rules one by one (`corner-shape:round`, `--dsw-alias-label-primary-foreground` thumb, `--dsw-alias-switch-thumb` override for the unchecked state, focus-ring variables).
+- Verification: the browser fixture renders an official `Switch` reference and compares computed width / height / padding / radius / background / `corner-shape` / thumb size and translation — all equal.
+
+**Fix 2: repositioned the new-session "Open in app" button**
+
+- Symptom: on the new-session page the plugin button sat between the floating buttons of `dsh-better-sidebar` and `dsh-awesome-hud`. Both plugins measure their own position from the official anchor; an in-flow node inserted by this plugin consumed their measuring space and made those two overlap each other.
+- Fix: the host node is now a `position:fixed` node on `document.body` instead of a corner-container child. It anchors to the row of the official "expand right panel" button, gathers the rects of visible buttons on that row (official button, `[data-dsh-dock-fallback]`, `[data-hud-float]`, other corner-container buttons), and lands 8px left of the leftmost one; vertically centred on the official 28px button; hidden until placed.
+- Tracking: `MutationObserver` + `resize` + a 500ms fallback poll re-measure (same cadence as the other plugins in that row), so neighbour buttons appearing/disappearing, window resizes and sidebar toggles are followed; the button still hides entirely while the right panel is expanded.
+- Tests: `test/open-in-app.test.mjs` gains 6 placement-geometry cases; `test/session-plus-v070-browser.test.mjs` grows to 8 (including no-overlap against the better-sidebar / awesome-hud stand-ins, re-alignment after neighbours disappear, and the official-`Switch` computed-style comparison). Unit tests 79 → 85, browser regressions 29 → 31.
+
+**Engineering**
+
+- `lib/client.js`: reuse the official primitives `Switch` (with fallback); feature 5's portal target changed from "first child of the corner container" to "fixed on body, leftmost of the whole cluster"; new `placeClusterButton` pure helper and cluster-selector constants exposed via `__internals` for offline tests.
+- `lib/index.js`, `cordis.patch.yml` and `dsh.client.inject` are unchanged; `NOTICE.md` now documents the MIT runtime dependency on `@deepseek-ai/dsh-client-ui-primitives`.
+
+---
+
 ## v0.7.0
 
 ### 中文

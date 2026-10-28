@@ -297,7 +297,7 @@ export async function themeHarness() {
   return { page, errors, close: () => browser.close() };
 }
 
-// —— 夹具三：v0.7.0 新会话页「在应用中打开」按钮 + 通用设置 5 行开关 ——
+// —— 夹具三：v0.7.x 新会话页「在应用中打开」按钮 + 通用设置 5 行开关 ——
 /** 1×1 透明 PNG：让图标的 <img> 真正加载成功，从而验证图标路径而不是回退字形。 */
 const ICON_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
 
@@ -307,11 +307,22 @@ export async function v070Harness() {
   await page.route('**/open-in-app/icon/**', route => route.fulfill({ status: 200, contentType: 'image/png', body: ICON_PNG }));
   await withCloseOnFailure(browser, page.evaluate(({ client }) => {
     const builtins = window.testBuiltins;
+    const primitives = builtins['@deepseek-ai/dsh-client-ui-primitives'];
+    if (!primitives || typeof primitives.Switch !== 'function') throw new Error('官方 Switch 原语不可用');
     const React = builtins.react;
     const h = React.createElement;
     const modules = new Map();
     window.__ModuleLoader__ = { load: definition => modules.set(definition.id, definition.factory(name => builtins[name])) };
     (0, eval)(client);
+
+    // 同一行里的两个「邻居」浮动按钮（不是本插件的依赖，只按各自真实定位公式放站位块）：
+    //   · dsh-better-sidebar：空白会话页的兜底切换，贴在官方展开按钮左侧 8px、28px 见方；
+    //   · dsh-awesome-hud：悬浮入口，再向左预留 better-sidebar 的槽位（28px + 8px）。
+    // 用真实几何验证「本按钮始终最左、且与它们都不重叠」。
+    const stubStyle = document.createElement('style');
+    stubStyle.textContent = '.stub-cluster{position:fixed;width:28px;height:28px;border-radius:50%;background:#e6e6e6;border:0;padding:0}';
+    document.head.appendChild(stubStyle);
+    let stubsVisible = true;
 
     const labels = {
       openInTitle: '用 {app} 打开',
@@ -390,18 +401,51 @@ export async function v070Harness() {
     let showHero = true;
 
     function Header() {
-      return h('header', { id: 'header', 'data-slot': 'conversation.session.header' },
-        h('div', { id: 'left-group' },
+      // 官方标题栏结构：角落容器右对齐（空白页 margin-left:auto、margin-right:-16px），
+      // 官方「展开右侧面板」按钮是容器里最后一个 28px 按钮；面板展开时整组隐藏。
+      return h('header', {
+        id: 'header', 'data-slot': 'conversation.session.header',
+        style: { display: 'flex', alignItems: 'center', boxSizing: 'border-box', height: '56px', padding: '10px 28px 0 20px' },
+      },
+        h('div', { id: 'left-group', style: { display: 'flex', gap: '8px', flex: 'none' } },
           h('button', { type: 'button', id: 'other-1', 'aria-label': 'other one' }, '1'),
           h('button', { type: 'button', id: 'other-2', 'aria-label': 'other two' }, '2')),
-        // 模拟真实环境：这一组里还可能有别的插件（dsh-better-sidebar）的按钮，
-        // 官方「展开右侧面板」是其中最后一个；面板展开时整组隐藏。
-        h('div', { id: 'corner', 'data-conversation-header-corner': '' },
-          panelOpen ? null : h('button', { type: 'button', id: 'other-pane', 'aria-label': 'add pane' }, 'pane'),
+        // DSH 0.2.1-rc.3 的角落容器在空白会话页只有官方「展开右侧面板」一个按钮
+        // （Split/Fullscreen 属于更早版本的形态）；面板展开时该按钮整组消失。
+        h('div', {
+          id: 'corner', 'data-conversation-header-corner': '',
+          style: { marginLeft: 'auto', marginRight: '-16px', display: 'flex', alignItems: 'center' },
+        },
           panelOpen ? null : h('button', {
             type: 'button', id: 'expand', 'data-sidebar-right-expand': '', 'aria-label': 'Open right sidebar',
+            style: { width: '28px', height: '28px', flex: 'none' },
             onClick: () => { panelOpen = true; render(); },
           }, 'panel')));
+    }
+
+    /** 两个邻居浮动按钮的站位块：按各自真实定位公式跟随官方展开按钮的量测结果。 */
+    function ClusterStubs() {
+      const [pos, setPos] = React.useState(null);
+      React.useLayoutEffect(() => {
+        const expand = document.getElementById('expand');
+        if (!stubsVisible || !expand) { setPos(null); return; }
+        const box = expand.getBoundingClientRect();
+        const top = Math.max(4, box.top + (box.height - 28) / 2);
+        setPos({
+          fallback: { top, left: Math.max(4, box.left - 8 - 28) },
+          hud: { top, left: Math.max(4, box.left - 8 - 36 - 28) },
+        });
+      }, [panelOpen, stubsVisible]);
+      if (!pos) return null;
+      return h(React.Fragment, null,
+        h('button', {
+          type: 'button', className: 'stub-cluster', 'data-dsh-dock-fallback': '', 'aria-label': 'better sidebar stub',
+          style: { top: pos.fallback.top + 'px', left: pos.fallback.left + 'px' },
+        }, 'b'),
+        h('button', {
+          type: 'button', className: 'stub-cluster', 'data-hud-float': '', 'aria-label': 'hud stub',
+          style: { top: pos.hud.top + 'px', left: pos.hud.left + 'px' },
+        }, 'h'));
     }
 
     function Hero() {
@@ -428,9 +472,16 @@ export async function v070Harness() {
       return h('div', { id: 'settings' }, entries.map(entry => entry.node));
     }
 
+    /** 官方 Switch 参照物：用于逐项比对「设置」里 5 个开关的计算样式。 */
+    function OfficialSwitchReference() {
+      return h('div', { id: 'official-switch-ref' },
+        h(primitives.Switch, { checked: true, onChange: () => {}, label: '官方参照' }));
+    }
+
     const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
     const render = () => {
-      builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null, h(Header), showHero ? h(Hero) : null, h(Settings))));
+      builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null,
+        h(Header), h(ClusterStubs), showHero ? h(Hero) : null, h(Settings), h(OfficialSwitchReference))));
     };
 
     window.fixture = {
@@ -439,8 +490,10 @@ export async function v070Harness() {
       fetchCalls,
       setFlag,
       flags: () => plus.__internals.featureFlags.snapshot(),
+      hasOfficialSwitch: () => plus.__internals.hasOfficialSwitch(),
       setPanel(open) { panelOpen = open === true; render(); },
       isPanelOpen: () => panelOpen,
+      setStubs(value) { stubsVisible = value === true; render(); },
       removeHero() { showHero = false; render(); },
       restoreHero() { showHero = true; render(); },
       setOpenFails(value) { openFails = value === true; },

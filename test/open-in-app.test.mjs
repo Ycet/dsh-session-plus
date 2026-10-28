@@ -268,3 +268,62 @@ test("面板展开判定：服务缺席或抛错时用官方展开按钮的可�
 	assert.equal(internals.panelExpandedNow({}), true, "展开按钮不在 → 面板已展开");
 	assert.equal(internals.panelExpandedNow({ sidebarRight: { isExpanded() { throw new Error("boom"); } } }), true, "服务抛错也要回退到 DOM");
 });
+
+// ── v0.7.1 落点：始终排在按钮簇最左侧（纯几何计算） ──────────────────────
+const rect = (left, top, width, height) => ({
+	left, top, right: left + width, bottom: top + height, width, height,
+});
+
+test("落点：排在整簇按钮最左侧，与最左按钮保持 8px 间距", () => {
+	const { internals } = setup({ storage: fakeStorage() });
+	const anchor = rect(900, 10, 28, 28);
+	const rows = [
+		anchor,
+		rect(820, 10, 28, 28), // better-sidebar 兜底切换
+		rect(760, 10, 28, 28), // awesome-hud 悬浮入口（本轮最左）
+	];
+	const placed = internals.placeClusterButton(rows, anchor, { width: 70, height: 24 });
+	assert.equal(internals.OPEN_IN_CLUSTER_GAP, 8);
+	assert.equal(placed.left, 760 - 8 - 70, "左侧必须紧贴最左按钮左侧 8px");
+	assert.equal(placed.top, 10 + (28 - 24) / 2, "垂直方向与官方按钮居中对齐");
+});
+
+test("落点：只有官方展开按钮时贴其左侧 8px", () => {
+	const { internals } = setup({ storage: fakeStorage() });
+	const anchor = rect(900, 10, 28, 28);
+	const placed = internals.placeClusterButton([anchor], anchor, { width: 70, height: 24 });
+	assert.equal(placed.left, 900 - 8 - 70);
+});
+
+test("落点：跨行按钮不参与最左判定", () => {
+	const { internals } = setup({ storage: fakeStorage() });
+	const anchor = rect(900, 10, 28, 28);
+	const rows = [anchor, rect(20, 300, 28, 28)]; // 视口别处（如底部）的按钮
+	const placed = internals.placeClusterButton(rows, anchor, { width: 70, height: 24 });
+	assert.equal(placed.left, 900 - 8 - 70);
+});
+
+test("落点：窗口极窄时贴住视口左缘（不小于 12px）", () => {
+	const { internals } = setup({ storage: fakeStorage() });
+	const anchor = rect(30, 10, 28, 28);
+	const placed = internals.placeClusterButton([anchor], anchor, { width: 70, height: 24 });
+	assert.equal(internals.OPEN_IN_MIN_LEFT, 12);
+	assert.equal(placed.left, 12);
+});
+
+test("落点：锚点或自身尺寸不可用时返回 null（调用方据此不落位）", () => {
+	const { internals } = setup({ storage: fakeStorage() });
+	const anchor = rect(900, 10, 28, 28);
+	assert.equal(internals.placeClusterButton([anchor], null, { width: 70, height: 24 }), null);
+	assert.equal(internals.placeClusterButton([anchor], rect(0, 0, 0, 0), { width: 70, height: 24 }), null);
+	assert.equal(internals.placeClusterButton([anchor], anchor, { width: 0, height: 24 }), null);
+});
+
+test("落点：按钮簇选择器覆盖 better-sidebar 与 awesome-hud 的浮动入口", () => {
+	const { internals } = setup({ storage: fakeStorage() });
+	assert.ok(internals.OPEN_IN_CLUSTER_SELECTORS.includes("[data-sidebar-right-expand]"));
+	assert.ok(internals.OPEN_IN_CLUSTER_SELECTORS.includes("[data-dsh-dock-fallback]"));
+	assert.ok(internals.OPEN_IN_CLUSTER_SELECTORS.includes("[data-hud-float]"));
+	// 离线环境没有官方 primitives：开关退回自绘；浏览器夹具里再断言官方 Switch 生效。
+	assert.equal(internals.hasOfficialSwitch(), false);
+});
