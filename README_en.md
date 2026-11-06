@@ -130,6 +130,17 @@ Current version: **v0.8.0**. Fully quit DeepSeek Harness, then use its bundled C
 
 The default macOS CLI is `/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`. Keep the quotes when the plugin path contains spaces. Reopen the desktop app after installation.
 
+### Install from GitHub / a Release asset (no local source, no npm account)
+
+```bash
+# Option 1: GitHub dependency (pinned to a release tag; requires git)
+dsh plugin --profile web add "github:Ycet/dsh-session-plus#v0.8.0"
+# Desktop: replace --profile web with --profile desktop (using the desktop-bundled CLI)
+
+# Option 2: Release asset tarball (no git required)
+dsh plugin --profile web add "https://github.com/Ycet/dsh-session-plus/releases/download/v0.8.0/dsh-session-plus-0.8.0.tgz"
+```
+
 To uninstall, quit the app first, then run:
 
 ```bash

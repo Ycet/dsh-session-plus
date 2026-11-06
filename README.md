@@ -130,6 +130,17 @@ dsh plugin --profile web add "dsh-session-plus@link:<absolute-path-to-plugin>"
 
 macOS 默认安装位置的 CLI 为 `/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`。插件路径可含空格，保留命令中的引号。安装后重新打开桌面应用。
 
+### 从 GitHub / Release 安装（无需本地源码，无需 npm 账号）
+
+```bash
+# 方式一：GitHub 依赖（锁定版本 tag，需本机有 git）
+dsh plugin --profile web add "github:Ycet/dsh-session-plus#v0.8.0"
+# 桌面端：把 --profile web 换成 --profile desktop（使用桌面端自带 CLI）
+
+# 方式二：Release 资产 tarball（无需 git）
+dsh plugin --profile web add "https://github.com/Ycet/dsh-session-plus/releases/download/v0.8.0/dsh-session-plus-0.8.0.tgz"
+```
+
 卸载同样需退出应用，再运行：
 
 ```bash
