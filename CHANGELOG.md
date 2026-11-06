@@ -4,6 +4,58 @@
 
 ---
 
+## v0.8.0
+
+### 中文
+
+**移除：选中文本 → 添加至对话**
+
+- 按产品决定下线 v0.3.0 起提供的「选中文本加入对话」能力：在聊天消息区 / 官方与 better-sidebar 右侧预览中选中文字后，不再弹出浮动「添加至对话」按钮，也不再向输入框开头插入代码块。
+- 同步删除：`conversation.input.overlay` 的 `selection-add` 注册与 `SelectionAdd` 组件、`lib/insert.js`（`codeFence` / `prependCodeBlock`）及其单测、`.sp-add-btn` 样式、`featureFlags` 的 `selection-add` 项与「设置 → 通用」对应设置行、`addToConversation` / `featSelectionTitle` / `featSelectionDesc` 中英文案键。
+- 设置行由 5 行变为 4 行（`order` 91–94）：提供商头部 / 账户菜单主题切换 / 推理等级滑条 / 新建会话页按钮；其余能力与开关行为不变。
+- 兼容：旧 `localStorage` 里的 `selection-add` 键会被忽略（开关仓库只读取已知功能 id），升级后无需手动清理。
+
+**工程与测试**
+
+- 测试基线按 v0.7.2 之后计：单元测试 87 → 81（删除 `test/insert.test.mjs` 7 项，新增 1 项「下线功能不得复活」注册面守护），浏览器回归 31 → 26（删除 5 项选文相关用例）；全量 107 项通过。
+- README / README_en / NOTICE 的功能编号与结构树同步（原「功能 2」及其后编号整体前移），并补记 v0.7.2 条目。
+
+### English
+
+**Removed: Selected Text → Add to Conversation**
+
+- The "add selected text to the conversation" capability introduced in v0.3.0 is retired on product decision: selecting text in the chat message area (or the official / better-sidebar right-side preview) no longer shows the floating "Add to conversation" pill, and nothing is inserted into the composer.
+- Deleted together with it: the `selection-add` registration on `conversation.input.overlay` and the `SelectionAdd` component, `lib/insert.js` (`codeFence` / `prependCodeBlock`) and its tests, the `.sp-add-btn` styles, the `selection-add` feature flag and its Settings → General row, and the `addToConversation` / `featSelectionTitle` / `featSelectionDesc` bilingual copy keys.
+- The switch panel now has four rows (orders 91–94): provider header / account-menu theme switch / effort slider / new-session button. Everything else behaves as before.
+- Compatibility: a leftover `selection-add` key in `localStorage` is ignored (the flag store only reads known feature ids), so no manual cleanup is required after upgrading.
+
+**Engineering and tests**
+
+- Baseline after v0.7.2: unit tests 87 → 81 (7 `test/insert.test.mjs` cases removed, 1 registration-surface guard added that the retired feature can never come back), browser regressions 31 → 26 (5 selection cases removed); all 107 tests pass.
+- README / README_en / NOTICE feature numbering and file trees updated (the former "Feature 2" and everything after it shifts up), and the missing v0.7.2 entry is backfilled.
+
+---
+
+## v0.7.2
+
+### 中文
+
+**修复：推理等级行定位不再依赖「根面板恰好两个 menuitem」**
+
+- 官方根面板仍是「模型 / 推理等级」两行，但行数不是契约；多出第三行时旧实现会静默不注入滑条。
+- 改为优先按文案识别推理等级行，认不出时按官方固定顺序取第 2 行；只有一行（模型无推理档位）时才返回空。同时补上 `engines.dsh: >=0.2.1-rc.2`。
+- 单元测试 85 → 87（新增 2 项）。
+
+### English
+
+**Fix: effort-row detection no longer assumes exactly two menuitems**
+
+- The official root panel still renders "model / reasoning effort", but the row count is not a contract; a third row used to make the slider silently not inject.
+- The row is now identified by its label first, falling back to the official fixed order (second row); only a single row (model has no effort levels) yields nothing. Also adds `engines.dsh: >=0.2.1-rc.2`.
+- Unit tests 85 → 87 (2 new cases).
+
+---
+
 ## v0.7.1
 
 ### 中文

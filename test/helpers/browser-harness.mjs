@@ -66,7 +66,7 @@ async function withCloseOnFailure(browser, promise) {
   }
 }
 
-// —— 夹具一：模型菜单提供商头部 + 选中文本 ——
+// —— 夹具一：模型菜单提供商头部 + 推理等级滑条 ——
 export async function browserHarness() {
   const { browser, page, errors, client } = await launch();
   const runtime = process.env.SESSION_PLUS_TEST_RUNTIME;
@@ -84,16 +84,15 @@ export async function browserHarness() {
         set(next) { value = next; for (const fn of listeners) fn(); }, listeners };
     };
     const registrations = new Map(), disposers = [];
-    /** 功能 4（推理等级滑条）的写回记录：每次 directory.select 的入参都收在这里。 */
+    /** 功能 3（推理等级滑条）的写回记录：每次 directory.select 的入参都收在这里。 */
     const selects = [];
     const directoryCache = new Map();
-    const input = new Map(), directories = new Map();
+    const directories = new Map();
     const ctx = {
       effect(fn) { const cleanup = fn(); if (cleanup) disposers.push(cleanup); },
       inject(_keys, fn) { fn(ctx); },
       locale: { register() { return () => {}; }, bind: () => key => ({
         providerLabel: '提供商：{name}',
-        addToConversation: '添加至对话',
         effortSliderLabel: '推理等级',
         effortSliderTitle: '推理等级：{name}',
         effortErrorNotReady: '模型目录尚未就绪，无法写入档位',
@@ -137,33 +136,25 @@ export async function browserHarness() {
     });
     const modelText = key => ({ 'menu.model': '模型', 'menu.effort': '推理等级', 'trigger.aria': 'Test model', 'menu.aria': '模型选择' }[key] ?? key);
     const bySlot = slotName => [...registrations.values()].filter(entry => entry.spec.name === slotName);
-    function Composer({ id, legacy }) {
-      const inputStore = input.get(id);
-      const useInput = selector => selector(React.useSyncExternalStore(inputStore.subscribe, inputStore.getSnapshot));
-      const inputActions = { setDraft: draft => inputStore.set({ draft }) };
+    function Composer({ id }) {
       return h('section', { id, 'data-slot': 'conversation.content', style: { position: 'relative', width: '520px', display: 'inline-block', verticalAlign: 'top' } },
         h('div', { 'data-conversation-scroll': '', style: { minHeight: '260px', paddingTop: '100px' } },
           h('p', { id: `${id}-message` }, `${id} 消息文本`),
           h('div', { 'data-slot': 'conversation.composer.bar', 'data-composer-card': '' },
             h('div', { 'data-slot': 'conversation.input.overlay' }, bySlot('conversation.input.overlay').map(({ spec, Component }) =>
-              h(Component, { ...spec.inject?.(id), key: spec.id, sessionId: id, useInput, inputActions }))),
+              h(Component, { ...spec.inject?.(id), key: spec.id, sessionId: id }))),
             h('div', { 'data-slot': 'conversation.input.right' }, bySlot('conversation.input.right').map(({ spec, Component }) =>
-              h(Component, { ...spec.inject?.(id), key: spec.id, sessionId: id, useInput, inputActions }))),
-            legacy ? h('textarea', { id: `${id}-input`, defaultValue: '草稿' }) : h('div', { id: `${id}-input`, 'data-composer-input': '', contentEditable: true, suppressContentEditableWarning: true }, '草稿'),
+              h(Component, { ...spec.inject?.(id), key: spec.id, sessionId: id }))),
+            h('div', { id: `${id}-input`, 'data-composer-input': '', contentEditable: true, suppressContentEditableWarning: true }, '草稿'),
             h('div', { 'data-slot': 'conversation.input.model' }, h(ModelSelect, { available: true, locked: false, directory: directories.get(id), load() {}, select() { return Promise.resolve({ ok: true }); }, t: modelText, renderSlot: () => null })))));
     }
     window.fixture = {
-      input, directories, errors: [], selects,
+      directories, errors: [], selects,
       setFlag,
       flags: () => plusModule.__internals.featureFlags.snapshot(),
-      render(ids = ['main'], legacy = false) {
-        for (const id of ids) { if (!input.has(id)) input.set(id, store({ draft: '原有草稿' })); if (!directories.has(id)) directories.set(id, store(state(id))); }
-        builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null, ids.map(id => h(Composer, { key: id, id, legacy })))));
-      },
-      select(id) {
-        const range = document.createRange(); range.selectNodeContents(document.getElementById(id));
-        const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
-        document.dispatchEvent(new Event('selectionchange'));
+      render(ids = ['main']) {
+        for (const id of ids) { if (!directories.has(id)) directories.set(id, store(state(id))); }
+        builtins['react-dom'].flushSync(() => root.render(h(React.Fragment, null, ids.map(id => h(Composer, { key: id, id })))));
       },
       setProvider(id, provider) { directories.get(id).set(state(provider)); },
       /** 切换当前模型是否带推理档位（reasoning = null 表示没有）。 */
@@ -196,7 +187,6 @@ export async function themeHarness() {
       themeUnavailable: '主题服务不可用',
       providerEntry: '模型提供商',
       providerLabel: '提供商：{name}',
-      addToConversation: '添加至对话',
     };
     let preference = 'system';
     let writes = 0;
@@ -297,7 +287,7 @@ export async function themeHarness() {
   return { page, errors, close: () => browser.close() };
 }
 
-// —— 夹具三：v0.7.x 新会话页「在应用中打开」按钮 + 通用设置 5 行开关 ——
+// —— 夹具三：v0.7.x 新会话页「在应用中打开」按钮 + 通用设置 4 行开关 ——
 /** 1×1 透明 PNG：让图标的 <img> 真正加载成功，从而验证图标路径而不是回退字形。 */
 const ICON_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
 
@@ -336,8 +326,6 @@ export async function v070Harness() {
       'app.warp': 'Warp',
       featProviderTitle: '模型菜单显示提供商名称',
       featProviderDesc: '在模型选择菜单顶部实时显示当前模型所属的提供商',
-      featSelectionTitle: '选中文本加入对话',
-      featSelectionDesc: '在聊天内容中选中文字后，用浮动按钮把选中文本以代码块插入输入框开头',
       featThemeTitle: '账户菜单主题快捷切换',
       featThemeDesc: '在账户菜单顶部提供三态切换条',
       featEffortTitle: '推理等级滑条',
@@ -459,7 +447,7 @@ export async function v070Harness() {
     function Settings() {
       // 真实设置页把 settings.general.item 的全部登记按 order 统一排序后再渲染，
       // 因此这里也把两条官方行（90 = 上传 Session Log、100 = 当前版本）混进同一个
-      // 列表里排序，才能验证我们那 5 行确实落在两者之间。
+      // 列表里排序，才能验证我们那 4 行确实落在两者之间。
       const rows = bySlot('settings.general.item').map(({ spec, Component }) => ({
         order: spec.order,
         node: h(Component, { ...(spec.inject ? spec.inject() : {}), key: spec.id, t }),
@@ -472,7 +460,7 @@ export async function v070Harness() {
       return h('div', { id: 'settings' }, entries.map(entry => entry.node));
     }
 
-    /** 官方 Switch 参照物：用于逐项比对「设置」里 5 个开关的计算样式。 */
+    /** 官方 Switch 参照物：用于逐项比对「设置」里 4 个开关的计算样式。 */
     function OfficialSwitchReference() {
       return h('div', { id: 'official-switch-ref' },
         h(primitives.Switch, { checked: true, onChange: () => {}, label: '官方参照' }));

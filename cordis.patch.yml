@@ -16,8 +16,9 @@
 # half from host Loader entries that declare `dsh.client` AND own a fiber AND are
 # not disabled (its processOne skip branch: `entry.fiber === void 0 ||
 # entry.disabled`). Removing this row, disabling it, or letting it fail to build
-# a fiber silently kills the provider header and the "add to conversation"
-# features along with the empty apply it was meant to guard.
+# a fiber silently kills the whole browser half (provider header, theme switch,
+# effort slider, new-session button and the settings switches) along with the
+# empty apply it was meant to guard.
 #
 # The browser half (lib/client.js) is discovered from the same package's
 # `dsh.client` declaration by that scan and composed into the page boot.

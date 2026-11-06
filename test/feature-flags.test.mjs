@@ -1,6 +1,6 @@
 // dsh-session-plus — v0.7.0 功能开关仓库的离线测试（node:test）
 //
-// 覆盖：默认全开、localStorage 持久化与容错、订阅通知去重、5 个设置行的
+// 覆盖：默认全开、localStorage 持久化与容错、订阅通知去重、4 个设置行的
 // 功能映射与文案键完整性。这些用例不需要真实 DOM / React：开关仓库与设置行
 // 元数据都在 bundle 的 __internals 接缝上。
 import { test } from "node:test";
@@ -76,19 +76,17 @@ function applyWithCapture({ storage } = {}) {
 	return { mod, seen };
 }
 
-test("开关：默认 5 项全开", () => {
+test("开关：默认 4 项全开", () => {
 	const { mod } = loadBundle({ storage: fakeStorage() });
 	const internals = mod.__internals;
 	assert.deepEqual(internals.FEATURE_IDS, [
 		"provider-header",
-		"selection-add",
 		"theme-switch",
 		"effort-slider",
 		"open-in-session",
 	]);
 	assert.deepEqual(internals.featureFlags.snapshot(), {
 		"provider-header": true,
-		"selection-add": true,
 		"theme-switch": true,
 		"effort-slider": true,
 		"open-in-session": true,
@@ -124,7 +122,6 @@ test("开关：JSON 损坏 / 非对象 / 非法值一律退回默认，不抛错
 		const { mod } = loadBundle({ storage });
 		assert.deepEqual(mod.__internals.featureFlags.snapshot(), {
 			"provider-header": true,
-			"selection-add": true,
 			"theme-switch": true,
 			"effort-slider": true,
 			"open-in-session": true,
@@ -135,8 +132,8 @@ test("开关：JSON 损坏 / 非对象 / 非法值一律退回默认，不抛错
 test("开关：localStorage 写入抛错时仍立即生效（仅内存）", () => {
 	const { mod } = loadBundle({ storage: throwingStorage() });
 	const flags = mod.__internals.featureFlags;
-	assert.doesNotThrow(() => flags.set("selection-add", false));
-	assert.equal(flags.get("selection-add"), false);
+	assert.doesNotThrow(() => flags.set("theme-switch", false));
+	assert.equal(flags.get("theme-switch"), false);
 });
 
 test("开关：没有 localStorage 时也能读写（内存态）", () => {
@@ -181,16 +178,16 @@ test("开关：toggle 取反，reset 后重新从 localStorage 读取", () => {
 	assert.equal(flags.get("provider-header"), true);
 });
 
-test("设置行：5 行与 5 个功能一一对应、order 递增、文案键中英齐备", () => {
+test("设置行：4 行与 4 个功能一一对应、order 递增、文案键中英齐备", () => {
 	const { mod, seen } = applyWithCapture({ storage: fakeStorage() });
 	const rows = mod.__internals.FEATURE_ROWS;
-	assert.equal(rows.length, 5);
+	assert.equal(rows.length, 4);
 	assert.deepEqual(rows.map((row) => row.feature), mod.__internals.FEATURE_IDS, "开关顺序必须与功能清单一致");
 
 	const settings = seen.registrations.filter((spec) => spec.name === "settings.general.item");
-	assert.equal(settings.length, 5);
+	assert.equal(settings.length, 4);
 	assert.deepEqual(settings.map((spec) => spec.id), rows.map((row) => row.id));
-	assert.deepEqual(settings.map((spec) => spec.order), [91, 92, 93, 94, 95]);
+	assert.deepEqual(settings.map((spec) => spec.order), [91, 92, 93, 94]);
 	for (const spec of settings) assert.equal(spec.locale, "sessionPlus");
 
 	const dicts = seen.locales[0];

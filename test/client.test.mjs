@@ -1,10 +1,11 @@
 // dsh-session-plus — 浏览器半区注册面回归测试（node:test）
 //
-// 守护「只移除打开工作区，不破坏另外两项功能」，并在 v0.5.0 后同时守护新增的
-// 第三项功能（账户菜单主题切换）：在最小 stub 环境里加载 lib/client.js
+// 守护「保留功能不误删、已下线功能不复活」：v0.4.0 移除「打开工作区」、v0.8.0
+// 移除「选中文本 → 添加至对话」，其余功能（提供商头部 / 主题切换 / 推理滑条 /
+// 新会话按钮 / 设置开关）必须继续完整注册。在最小 stub 环境里加载 lib/client.js
 // （ModuleLoader bundle）并真正执行一次 apply()，把注册面固定下来。
-// 任何误删共享基建（locale 词典键、conversation.input.overlay 席位、样式 effect、
-// 客户端 inject）都会在这里失败；被移除功能的注册点若复活同样会失败。
+// 任何误删共享基建（locale 词典键、席位注册、样式 effect、客户端 inject）都会
+// 在这里失败；被移除功能的注册点或文案键若复活同样会失败。
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -46,7 +47,7 @@ function loadClient({ modelService = true, themeService = true } = {}) {
 		get: () => undefined,
 	};
 	ctx.inject = (keys, fn) => {
-		// 主题切换按服务可用性装配：服务缺失时整条功能不部署（另两项功能不受影响）。
+		// 主题切换按服务可用性装配：服务缺失时整条功能不部署（其它功能不受影响）。
 		if (Array.isArray(keys) && keys.includes("theme")) { if (themeService) fn(ctx); return; }
 		if (modelService) fn(ctx);
 	};
@@ -63,13 +64,11 @@ test("浏览器半区：bundle id 与客户端 inject 保持不变", () => {
 	assert.equal(typeof mod.apply, "function");
 });
 
-test("浏览器半区：六处功能注册齐全（3 个功能席位 + 5 个设置行 + 1 个新会话按钮）", () => {
+test("浏览器半区：七处功能注册齐全（3 个功能席位 + 4 个设置行 + 1 个新会话按钮）", () => {
 	const { seen } = loadClient();
 	assert.deepEqual(seen.slotInjects, [
 		"conversation.input.overlay",
-		"conversation.input.overlay",
 		"conversation.input.right",
-		"settings.general.item",
 		"settings.general.item",
 		"settings.general.item",
 		"settings.general.item",
@@ -78,13 +77,11 @@ test("浏览器半区：六处功能注册齐全（3 个功能席位 + 5 个设�
 	]);
 	assert.deepEqual(seen.registrations, [
 		["conversation.input.overlay", "provider-header", 90],
-		["conversation.input.overlay", "selection-add", 91],
 		["conversation.input.right", "codex-effort-slider", 40],
 		["settings.general.item", "session-plus/provider-header", 91],
-		["settings.general.item", "session-plus/selection-add", 92],
-		["settings.general.item", "session-plus/theme-switch", 93],
-		["settings.general.item", "session-plus/effort-slider", 94],
-		["settings.general.item", "session-plus/open-in-session", 95],
+		["settings.general.item", "session-plus/theme-switch", 92],
+		["settings.general.item", "session-plus/effort-slider", 93],
+		["settings.general.item", "session-plus/open-in-session", 94],
 		["conversation.hero.options", "session-plus/open-in-app", 50],
 	]);
 });
@@ -92,7 +89,7 @@ test("浏览器半区：六处功能注册齐全（3 个功能席位 + 5 个设�
 test("浏览器半区：设置行 order 全部落在官方上传行（90）与版本行（100）之间", () => {
 	const { seen } = loadClient();
 	const rows = seen.registrations.filter(([slot]) => slot === "settings.general.item");
-	assert.equal(rows.length, 5, "必须有 5 个功能开关行");
+	assert.equal(rows.length, 4, "必须有 4 个功能开关行");
 	for (const [, , order] of rows) {
 		assert.ok(order > 90 && order < 100, `设置行 order ${order} 必须紧跟官方上传 Session Log 行之后`);
 	}
@@ -107,7 +104,6 @@ test("浏览器半区：locale 词典、样式 effect 与主题切换 effect 均
 		"dsh-session-plus: effort slider",
 	]);
 	const expected = [
-		"addToConversation",
 		"app.androidstudio",
 		"app.cursor",
 		"app.explorer",
@@ -154,8 +150,6 @@ test("浏览器半区：locale 词典、样式 effect 与主题切换 effect 均
 		"featOpenInSessionTitle",
 		"featProviderDesc",
 		"featProviderTitle",
-		"featSelectionDesc",
-		"featSelectionTitle",
 		"featThemeDesc",
 		"featThemeTitle",
 		"openInAppsError",
@@ -184,19 +178,28 @@ test("浏览器半区：会话头部与 shell.overlay 的注册已彻底移除",
 	}
 });
 
+test("v0.8.0 下线的「选中文本 → 添加至对话」不得复活", () => {
+	const { seen } = loadClient();
+	const source = readFileSync(CLIENT_PATH, "utf8");
+	const surface = JSON.stringify(seen);
+	for (const gone of ["selection-add", "SELECTION_ADD_ID", "addToConversation", "prependCodeBlock", "featSelectionTitle", "featSelectionDesc", "sp-add-btn"]) {
+		assert.equal(source.includes(gone), false, `${gone} 不应再出现在 lib/client.js 中`);
+		assert.equal(surface.includes(gone), false, `${gone} 不应再出现在注册面 / 词典键中`);
+	}
+});
+
 /** 不依赖 modelDirectories / theme 服务的注册面（设置行 + 新会话按钮）。 */
 const SERVICE_FREE_ROWS = [
 	["settings.general.item", "session-plus/provider-header", 91],
-	["settings.general.item", "session-plus/selection-add", 92],
-	["settings.general.item", "session-plus/theme-switch", 93],
-	["settings.general.item", "session-plus/effort-slider", 94],
-	["settings.general.item", "session-plus/open-in-session", 95],
+	["settings.general.item", "session-plus/theme-switch", 92],
+	["settings.general.item", "session-plus/effort-slider", 93],
+	["settings.general.item", "session-plus/open-in-session", 94],
 	["conversation.hero.options", "session-plus/open-in-app", 50],
 ];
 
-test("模型目录服务不存在时只降级提供商头部，选文功能仍注册", () => {
+test("模型目录服务不存在时只降级提供商头部，设置行与新会话按钮仍注册", () => {
 	const { seen } = loadClient({ modelService: false });
-	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91], ...SERVICE_FREE_ROWS]);
+	assert.deepEqual(seen.registrations, [...SERVICE_FREE_ROWS]);
 });
 
 test("主题服务不存在时整条主题切换不装配，其余功能不受影响", () => {
@@ -208,15 +211,14 @@ test("主题服务不存在时整条主题切换不装配，其余功能不受�
 	]);
 	assert.deepEqual(seen.registrations, [
 		["conversation.input.overlay", "provider-header", 90],
-		["conversation.input.overlay", "selection-add", 91],
 		["conversation.input.right", "codex-effort-slider", 40],
 		...SERVICE_FREE_ROWS,
 	]);
 });
 
-test("模型目录服务不存在时滑条与提供商头部都不装配，选文与主题切换照常", () => {
+test("模型目录服务不存在时滑条与提供商头部都不装配，主题切换照常", () => {
 	const { seen } = loadClient({ modelService: false });
-	assert.deepEqual(seen.registrations, [["conversation.input.overlay", "selection-add", 91], ...SERVICE_FREE_ROWS]);
+	assert.deepEqual(seen.registrations, [...SERVICE_FREE_ROWS]);
 	assert.deepEqual(seen.effects, [
 		"dsh-session-plus: dictionaries",
 		"dsh-session-plus: styles",
@@ -224,10 +226,10 @@ test("模型目录服务不存在时滑条与提供商头部都不装配，选�
 	]);
 });
 
-test("功能开关不依赖任何可选服务：两个服务都缺席时 5 个设置行仍注册", () => {
+test("功能开关不依赖任何可选服务：两个服务都缺席时 4 个设置行仍注册", () => {
 	const { seen } = loadClient({ modelService: false, themeService: false });
 	const rows = seen.registrations.filter(([slot]) => slot === "settings.general.item");
-	assert.equal(rows.length, 5, "设置行必须与服务可用性解耦，否则用户无法再打开功能");
+	assert.equal(rows.length, 4, "设置行必须与服务可用性解耦，否则用户无法再打开功能");
 	assert.equal(seen.registrations.some(([slot]) => slot === "conversation.hero.options"), true);
 });
 

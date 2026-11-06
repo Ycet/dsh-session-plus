@@ -8,7 +8,7 @@ import { browserAvailable, v070Harness } from './helpers/browser-harness.mjs';
 //      与它们保持 8px 间距且不重叠；有消息后（hero 卸载）按钮消失。
 //   2) 右侧面板展开时隐藏、收起后恢复。
 //   3) 主按钮 / 应用菜单的宿主请求与偏好记忆。
-//   4) 通用设置 5 行开关的位置、顺序、即时生效，且开关复用官方 Switch（样式逐项一致）。
+//   4) 通用设置 4 行开关的位置、顺序、即时生效，且开关复用官方 Switch（样式逐项一致）。
 //   5) 打开失败弹 Toast。
 const options = { skip: !browserAvailable, timeout: 30000 };
 
@@ -163,29 +163,28 @@ test('打开失败时弹出 Toast，并在数秒后自动消失', options, async
 	} finally { await fixture.close(); }
 });
 
-test('通用设置：5 行开关排在官方 Session Log 行之后、版本行之前，切换即时生效', options, async () => {
+test('通用设置：4 行开关排在官方 Session Log 行之后、版本行之前，切换即时生效', options, async () => {
 	const fixture = await v070Harness();
 	try {
 		const { page } = fixture;
 		await page.waitForSelector('[data-sp-feature-toggle]');
-		assert.equal(await page.locator('#settings [data-sp-feature-toggle]').count(), 5);
+		assert.equal(await page.locator('#settings [data-sp-feature-toggle]').count(), 4);
 		const layout = await page.evaluate(() => [...document.querySelectorAll('#settings > *')]
 			.map(node => node.id || node.dataset.spFeatureToggle || 'unknown'));
 		assert.deepEqual(layout, [
 			'row-session-log',
 			'provider-header',
-			'selection-add',
 			'theme-switch',
 			'effort-slider',
 			'open-in-session',
 			'row-version',
-		], '5 行开关必须紧接官方「上传 Session Log」行下方');
+		], '4 行开关必须紧接官方「上传 Session Log」行下方');
 
 		const switches = await page.evaluate(() => [...document.querySelectorAll('[data-sp-switch]')].map(node => {
 			const control = node.querySelector('[role="switch"]');
 			return [node.dataset.spSwitch, control, control === null ? null : control.getAttribute('aria-checked')];
 		}).map(([id, control, checked]) => [id, checked, control === null ? null : control.className]));
-		assert.deepEqual(switches.map(([id]) => id), ['provider-header', 'selection-add', 'theme-switch', 'effort-slider', 'open-in-session']);
+		assert.deepEqual(switches.map(([id]) => id), ['provider-header', 'theme-switch', 'effort-slider', 'open-in-session']);
 		for (const [, checked, className] of switches) {
 			assert.equal(checked, 'true', '默认全部开启');
 			assert.match(className, /switch/, '开关必须使用官方 Switch 的样式类');

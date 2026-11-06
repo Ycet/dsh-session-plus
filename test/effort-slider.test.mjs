@@ -104,6 +104,20 @@ test("注入：滑条落进「推理等级」行，行被加高折行，官方�
 	assert.equal(root.getAttribute("data-motion"), "full", "动画固定完整档");
 });
 
+test("根面板多出一行时仍能按文案找到推理等级行", async () => {
+	// 官方 0.2.2 起根面板是「模型 / 推理等级」两行，但行数从来不是契约；
+	// 这里多加一行模拟官方后续扩展，滑条仍必须落在推理等级行上。
+	const ctx = await setup({ menu: { extraRows: ["上下文窗口"] } });
+	const hostNode = ctx.react.find("host");
+	assert.ok(hostNode !== null, "多出一行后滑条仍被注入");
+	assert.equal(hostNode.parentNode, ctx.menu.effortRow, "仍然挂在推理等级那一行");
+});
+
+test("模型没有推理档位（根面板只剩模型行）时不注入", async () => {
+	const ctx = await setup({ menu: { reasoning: false } });
+	assert.equal(ctx.react.find("host"), null, "找不到推理等级行就不注入");
+});
+
 test("档位映射：从目录快照算出官方档位列表与索引", async () => {
 	const { vendor } = await setup();
 	const internals = vendor;

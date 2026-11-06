@@ -194,7 +194,7 @@ export function createDocument() {
  * + 根面板两行(模型 / 推理等级)，形状逐字对齐 app.asar 里 ModelSelect 的产物。
  *
  * @param document createDocument() 的结果
- * @param options  { effortLabel?: string, modelLabel?: string, open?: boolean, reasoning?: boolean }
+ * @param options  { effortLabel?: string, modelLabel?: string, open?: boolean, reasoning?: boolean, extraRows?: string[] }
  * @returns { composer, seat, menu, modelRow, effortRow, close() }
  */
 export function createOfficialMenu(document, options = {}) {
@@ -244,6 +244,8 @@ export function createOfficialMenu(document, options = {}) {
 
   const model = makeRow("模型", options.modelLabel ?? "DeepSeek-V41-Flash");
   const effort = options.reasoning === false ? null : makeRow("推理等级", options.effortLabel ?? "High");
+  // 官方根面板的行数不是稳定契约：extraRows 用于回归「多出一行时仍能定位推理等级行」。
+  for (const extra of options.extraRows ?? []) makeRow(extra, "");
   const modelRow = model.row;
   const effortRow = effort === null ? null : effort.row;
 

@@ -3,7 +3,7 @@
 // 本插件的全部能力都在浏览器半区，宿主半区是刻意保留的空 apply。这三个用例守护的
 // 是一条硬约束：宿主行必须继续可挂载 —— dsh-client-modules 只从「宿主 Loader
 // entries 中声明了 dsh.client、entry.fiber 存在且未被 disabled」的包发现浏览器半区，
-// 删掉宿主半区或让它无法成 fiber，会让提供商头部与「添加至对话」一起静默失效。
+// 删掉宿主半区或让它无法成 fiber，会让浏览器半区的全部功能一起静默失效。
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as host from "../lib/index.js";

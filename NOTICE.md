@@ -40,7 +40,7 @@ SOFTWARE.
 ## @deepseek-ai/dsh-client-ui-open-in-app（DeepSeek Harness）
 
 - **来源**：DeepSeek Harness 官方客户端包 `@deepseek-ai/dsh-client-ui-open-in-app`（宿主侧路由实现在 `@deepseek-ai/dsh-host-open-in-app`），随 DSH 桌面版 `0.2.1-rc.3` 核对
-- **使用位置**：`lib/client.js` 中「功能 5：新建会话页『在应用中打开』按钮」一节，以及 `test/open-in-app.test.mjs` / `test/session-plus-v070-browser.test.mjs` 相关用例
+- **使用位置**：`lib/client.js` 中「功能 4：新建会话页『在应用中打开』按钮」一节，以及 `test/open-in-app.test.mjs` / `test/session-plus-v070-browser.test.mjs` 相关用例
 - **使用方式**：**未复制其源代码**。本仓库只是
   1. 镜像其分体按钮的视觉参数（`.5px` 边框、`--dsw-radius-sm`、24px 高、图标 13px、箭头分隔线），
   2. 镜像其按钮文案（`open.title` / `path.more` / `path.appDefault` / `path.appsError` / `path.openError`）与 34 个应用显示名，
@@ -77,6 +77,6 @@ SOFTWARE.
 ## @deepseek-ai/dsh-client-ui-primitives（DeepSeek Harness）
 
 - **来源**：DeepSeek Harness 官方客户端原语包 `@deepseek-ai/dsh-client-ui-primitives`，随 DSH 桌面版 `0.2.1-rc.3` 核对
-- **使用位置**：`lib/client.js` 中「功能 6：通用设置开关」的 `FeatureToggleRow`（v0.7.1 起），以及 `test/session-plus-v070-browser.test.mjs` 的样式比对用例
+- **使用位置**：`lib/client.js` 中「功能 5：通用设置开关」的 `FeatureToggleRow`（v0.7.1 起），以及 `test/session-plus-v070-browser.test.mjs` 的样式比对用例
 - **使用方式**：**运行时直接 `require` 官方原语并渲染其 `Switch` 组件**（与官方「在使用官方模型 API 时上传 Session Log」行同一个组件、同一份 CSS），未复制其源代码；仅在原语不可用的旧运行时退回自绘开关，该兜底样式的几何与 token 参考官方 `Switch.module.css`（36×20 轨道、16px 圆形滑块、`corner-shape:round`）。
 - **许可证**：MIT（文本同上，Copyright (c) 2026 DeepSeek）
