@@ -491,3 +491,295 @@ export async function v070Harness() {
   }, { client }));
   return { page, errors, close: () => browser.close() };
 }
+
+// —— 夹具四：v0.9.0 账户行设置齿轮 + 账户菜单语言行 ——
+export async function accountExtrasHarness() {
+	const { browser, page, errors, client } = await launch();
+	await withCloseOnFailure(browser, page.evaluate(({ client }) => {
+		const builtins = window.testBuiltins;
+		const primitives = builtins['@deepseek-ai/dsh-client-ui-primitives'];
+		if (!primitives || !primitives.Menu) throw new Error('官方 Menu 原语不可用');
+		const React = builtins.react, h = React.createElement;
+		const modules = new Map();
+		window.__ModuleLoader__ = { load: definition => modules.set(definition.id, definition.factory(name => builtins[name])) };
+		(0, eval)(client);
+
+		// 只提供本夹具断言用到的文案；其余键回退为键名，避免复制官方词典。
+		const labels = {
+			gearAria: '打开设置',
+			gearFailed: '无法打开设置面板',
+			languageItem: '语言',
+			languageMenuLabel: '切换界面语言',
+			languageUnavailable: '语言服务不可用',
+		};
+		const LOCALES = [['zh', '中文'], ['en', 'English'], ['ja', '日本語'], ['es', 'Español'], ['fr', 'Français'], ['de', 'Deutsch'], ['ru', 'Русский'], ['pt', 'Português']];
+		let active = 'zh';
+		const localeListeners = new Set();
+		const localeSnapshot = () => ({ active, locales: LOCALES.map(([id, label]) => ({ id, label })), revision: 1 });
+		const locale = {
+			getSnapshot: localeSnapshot,
+			getLocale: localeSnapshot,
+			setLocale(next) {
+				if (!LOCALES.some(([id]) => id === next) || next === active) return;
+				active = next;
+				for (const listener of localeListeners) listener(localeSnapshot());
+			},
+			subscribe(listener) { localeListeners.add(listener); return () => localeListeners.delete(listener); },
+			register: () => () => {},
+			bind: () => key => labels[key] ?? key,
+			addLanguage: () => {},
+		};
+
+		// 账户行、菜单与设置面板的最小结构：与官方 AccountMenu / SettingsRoot 的对外契约一致。
+		let state = { open: false, wide: true, dialog: false, section: 1, storeEnabled: true, openedSection: null, openCalls: 0, selected: null };
+		let renderApp = () => {};
+		const rerender = () => renderApp();
+		const shell = {
+			actions: {
+				openSection(id) { state.openedSection = id; state.dialog = true; rerender(); },
+				open() { state.openCalls += 1; state.dialog = true; rerender(); },
+			},
+		};
+		const slots = {
+			entries(name) {
+				if (name === 'sidebar.settings') {
+					// storeEnabled=false 模拟未来官方收窄该内部字段：插件必须退化为菜单路径。
+					return state.storeEnabled ? [{ options: { store: { create: () => shell } } }] : [];
+				}
+				if (name === 'settings.section') {
+					return [{ options: { id: 'account', order: 0 } }, { options: { id: 'general', order: 10 } }, { options: { id: 'models', order: 20 } }];
+				}
+				return undefined;
+			},
+			inject: () => {},
+			register: () => () => {},
+		};
+		const theme = {
+			getTheme: () => ({ preference: 'system', active: { id: 'light', colorScheme: 'light', tokens: {} }, themes: [], fontSizes: {}, fontFamilies: {}, revision: 0 }),
+			setTheme: () => {},
+		};
+		const disposers = [];
+		const ctx = {
+			effect(fn) { const cleanup = fn(); if (typeof cleanup === 'function') disposers.push(cleanup); return cleanup; },
+			on: () => () => {},
+			inject(keys, fn) {
+				if (keys.includes('theme') || keys.includes('modelDirectories')) { fn(ctx); return; }
+				if (keys.every(key => key === 'slots' || key === 'locale')) fn(ctx);
+			},
+			locale,
+			slots,
+			theme,
+			modelDirectories: { directoryFor: () => null },
+			get(name) { return ctx[name]; },
+		};
+		const plusModule2 = modules.get('dsh-session-plus');
+		plusModule2.apply(ctx);
+		const setFlag = (id, value) => plusModule2.__internals.featureFlags.set(id, value);
+
+		const SECTIONS = ['账户与余额', '通用设置', '模型'];
+		function App() {
+			const row = h('div', {
+				id: 'account-row',
+				'data-inset': 'true',
+				'data-slot': 'settings.launcher',
+				style: { position: 'relative', width: '260px', padding: '8px', background: '#f5f5f7', borderRadius: '10px' },
+			}, [
+				h(primitives.Menu, {
+					key: 'menu',
+					open: state.open,
+					side: 'top',
+					portal: true,
+					autoFocus: true,
+					onClose: () => { state.open = false; rerender(); },
+					onSelect: id => { state.selected = id; state.open = false; rerender(); },
+					items: [
+						{ id: 'settings', label: '设置' },
+						{ id: 'contact', label: '意见反馈' },
+						{ id: 'signout', label: '退出登录' },
+					],
+					anchor: h('button', {
+						key: 'anchor',
+						type: 'button',
+						id: 'account-trigger',
+						'data-collapsed': String(!state.wide),
+						'data-signed-out': 'false',
+						'aria-haspopup': 'menu',
+						'aria-expanded': state.open,
+						onClick: () => { state.open = !state.open; rerender(); },
+						style: { width: '100%', height: '44px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' },
+					}, state.wide ? 'Ycet' : ''),
+				}),
+				state.dialog
+					? h('div', {
+						key: 'dialog',
+						role: 'dialog',
+						'data-shortcut-modal': 'settings',
+						'aria-modal': 'true',
+						style: { position: 'fixed', right: '16px', top: '16px', width: '320px', background: '#fff', border: '1px solid #ddd' },
+					}, h('nav', null, SECTIONS.map((label, index) => h('button', {
+						key: label,
+						type: 'button',
+						'aria-current': state.section === index ? 'true' : 'false',
+						onClick: () => { state.section = index; rerender(); },
+					}, label))))
+					: null,
+			]);
+			return row;
+		}
+		const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
+		renderApp = () => { builtins['react-dom'].flushSync(() => root.render(h(App))); };
+
+		window.fixture = {
+			errors: [],
+			open: () => { state.open = true; rerender(); },
+			close: () => { state.open = false; rerender(); },
+			isOpen: () => state.open,
+			setWide(value) { state.wide = value; rerender(); },
+			storeEnabled(value) { state.storeEnabled = value; },
+			openedSection: () => state.openedSection,
+			openCalls: () => state.openCalls,
+			selected: () => state.selected,
+			dialogOpen: () => state.dialog,
+			activeLocale: () => active,
+			locales: () => LOCALES.map(([id, label]) => ({ id, label })),
+			setFlag,
+			flags: () => plusModule2.__internals.featureFlags.snapshot(),
+			unmount() {
+				builtins['react-dom'].flushSync(() => root.unmount());
+				for (const dispose of disposers.reverse()) dispose();
+			},
+		};
+		window.fixture.errors = [];
+		renderApp();
+	}, { client }));
+	return { page, errors, close: () => browser.close() };
+}
+
+// —— 夹具五：v0.9.0 mermaid fence 层（懒加载 chunk + SVG 渲染） ——
+// 用假 mermaid 顶替真库（真库 3.4 MB，跑测试没必要），重点验证：
+// 门控（开关/流式）、chunk 单例、主题失效重绘、工具条交互、失败回落。
+export async function mermaidHarness() {
+	const { browser, page, errors, client } = await launch();
+	await withCloseOnFailure(browser, page.evaluate(({ client }) => {
+		const builtins = window.testBuiltins;
+		const React = builtins.react, h = React.createElement;
+		const modules = new Map();
+
+		// 假 mermaid：render 计数 + 可控失败；BROKEN 触发解析错误。
+		const fakeMermaid = {
+			renderCalls: 0,
+			initializeCalls: 0,
+			initialize() { fakeMermaid.initializeCalls += 1; },
+			render(_id, code) {
+				fakeMermaid.renderCalls += 1;
+				if (code.includes('BROKEN')) return Promise.reject(new Error('Parse error on line 2'));
+				return Promise.resolve({ svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10" data-stub="' + fakeMermaid.renderCalls + '"><text>graph</text></svg>' });
+			},
+		};
+		const chunk = { calls: 0, pending: 0, fail: false };
+		const requireFn = name => builtins[name];
+		requireFn.async = () => {
+			chunk.calls += 1;
+			if (chunk.fail) return Promise.reject(new Error('require.async failed'));
+			// 模拟异步 chunk：给一帧延迟，验证串行队列。
+			return new Promise(resolve => setTimeout(() => resolve({ mermaid: fakeMermaid }), 5));
+		};
+		window.__ModuleLoader__ = { load: definition => modules.set(definition.id, definition.factory(requireFn)) };
+		(0, eval)(client);
+
+		const labels = {
+			mmdDiagram: 'mermaid 图表',
+			mmdSource: '源码',
+			mmdCopy: '复制 mermaid 源码',
+			mmdCopied: '已复制',
+			mmdDownload: '下载 SVG',
+			mmdRenderFailed: '图表渲染失败，已显示源码',
+			mmdLoadFailed: '图表库加载失败，已显示源码',
+		};
+
+		const themeHandlers = new Set();
+		const registered = [];
+		const disposers = [];
+		const theme = {
+			getTheme: () => ({ preference: 'system', active: { id: 'light', colorScheme: 'light', tokens: {} }, themes: [], fontSizes: {}, fontFamilies: {}, revision: 0 }),
+			setTheme: () => {},
+		};
+		const slots = {
+			inject(_name, cb) { cb(); },
+			register(spec, Component) { registered.push({ spec, Component }); return () => {}; },
+		};
+		const ctx = {
+			effect(fn) { const cleanup = fn(); if (typeof cleanup === 'function') disposers.push(cleanup); return cleanup; },
+			on(name, handler) { if (name === 'theme/change') themeHandlers.add(handler); return () => themeHandlers.delete(handler); },
+			// 只跑需要 slots/theme 的装配；modelDirectories 相关功能与本夹具无关。
+			inject(keys, fn) { if (keys.includes('modelDirectories')) return; fn(ctx); },
+			locale: {
+				register: () => () => {},
+				bind: () => key => labels[key] ?? key,
+				subscribe: () => () => {},
+				getSnapshot: () => ({ active: 'zh', locales: [{ id: 'zh', label: '中文' }], revision: 0 }),
+				getLocale: () => 'zh',
+				setLocale: () => {},
+				addLanguage: () => {},
+			},
+			slots,
+			theme,
+			get(name) { return ctx[name]; },
+		};
+		const plusModule = modules.get('dsh-session-plus');
+		plusModule.apply(ctx);
+
+		const fence = registered.find(entry => entry.spec.name === 'conversation.chat.markdown.fence');
+		const setFlag = (id, value) => plusModule.__internals.featureFlags.set(id, value);
+
+		const state = { code: 'flowchart LR\n  A-->B', streaming: false };
+		let renderApp = () => {};
+		const rerender = () => renderApp();
+
+		// 剪贴板打桩：chromium headless 里 clipboard 权限不稳定，直接记录调用。
+		window.__copied = null;
+		Object.defineProperty(navigator, 'clipboard', {
+			configurable: true,
+			value: { writeText(text) { window.__copied = text; return Promise.resolve(); } },
+		});
+
+		const root = builtins['react-dom/client'].createRoot(document.getElementById('test-root'));
+		renderApp = () => {
+			const injected = fence && typeof fence.spec.inject === 'function' ? fence.spec.inject() : {};
+			builtins['react-dom'].flushSync(() => root.render(h('div', { id: 'mermaid-host' },
+				fence
+					? h(fence.Component, {
+						...injected,
+						key: 'fence',
+						lang: 'mermaid',
+						code: state.code,
+						streaming: state.streaming,
+						meta: '',
+						t: key => labels[key] ?? key,
+						children: h('pre', { className: 'md-code-block', 'data-stub-code': 'true', key: 'code' }, state.code),
+					})
+					: h('div', { id: 'missing-fence' }, 'no fence registration'),
+			)));
+		};
+
+		window.fixture = {
+			fenceRegistered: () => Boolean(fence),
+			setCode(code) { state.code = code; rerender(); },
+			setStreaming(value) { state.streaming = value; rerender(); },
+			setFlag,
+			flags: () => plusModule.__internals.featureFlags.snapshot(),
+			themeChange() { for (const handler of Array.from(themeHandlers)) handler({ active: { id: 'dark', colorScheme: 'dark', tokens: {} } }); },
+			copied: () => window.__copied,
+			renderCalls: () => fakeMermaid.renderCalls,
+			initializeCalls: () => fakeMermaid.initializeCalls,
+			chunkCalls: () => chunk.calls,
+			failChunk(value) { chunk.fail = value; },
+			unmount() {
+				builtins['react-dom'].flushSync(() => root.unmount());
+				for (const dispose of disposers.reverse()) dispose();
+			},
+		};
+		renderApp();
+	}, { client }));
+	return { page, errors, close: () => browser.close() };
+}

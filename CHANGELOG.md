@@ -4,6 +4,94 @@
 
 ---
 
+## v0.9.0
+
+### 中文
+
+**新增：侧栏账户行设置齿轮**
+
+- 侧栏底部账户行（头像 + 用户名）右侧常驻一个设置齿轮，直接复用 DSH 内置设置图标（图标精灵 `dsw-icon-settings-outline-medium`），点击一步直达「设置 → 通用」。
+- 打开面板走三级兜底：先调用官方设置外壳的内部 store 句柄（`settings.launcher` 席位的 `store.create().actions.openSection('general')`）；内部字段不可用时自动降级为「展开账户菜单 → 点设置项 → 点通用设置」；仍然失败只把悬停提示改成「无法打开设置面板」，不改动任何状态。
+- 齿轮常驻显示、命中区 32×32；侧栏收起（`data-collapsed="true"`）时隐藏并撤掉账户行让位内边距；未登录时照常可用。
+
+**新增：账户菜单语言切换**
+
+- 账户菜单里紧贴官方「设置」项的**上方**新增语言行：左侧官方地球图标、中间「语言」、右侧当前语言原生名。
+- 点开是在该行旁展开的二级浮层（当前项带勾选）；语言列表与名称直接读官方 locale 快照，当前 8 种（中文 / English / 日本語 / Español / Français / Deutsch / Русский / Português），官方以后新增会自动出现。
+- 选中后只收起浮层、账户菜单保持打开，界面语言立即切换；`Enter` / `Space` / `→` 展开，`↑` / `↓` 移动，`Esc` 收起并回焦到语言行；浮层贴边时自动翻边，菜单卡片裁剪时降级为行内展开。
+
+**改动：账户菜单主题三态条改用官方图标**
+
+- `跟随系统 / 浅色 / 深色` 三个文字段换成官方太阳 / 月亮 / 显示器图标（`followsystem-outline` / `light-outline` / `dark-outline`，16px），轨道 32px、槽 26px 与选中态不变，无障碍名称通过 `aria-label` 保留。
+- 图标优先用官方图标精灵的 `<use>`；运行时没有该精灵时退回本插件自绘的同形 SVG。
+
+**新增：回复内 mermaid 流程图自动渲染**
+
+- 聊天流里语言标记为 `mermaid` 的围栏代码块（助手回复、用户消息、推理块统一处理）在消息结束后就地渲染为 SVG，走官方 `conversation.chat.markdown.fence` hoc 席位按语言分派，未替换官方 Markdown 渲染器。
+- mermaid `11.17.2`（MIT）以独立 chunk 懒加载：首次出现图时才下载，之后同页面复用；渲染串行排队，主题变化时缓存失效并按新 token 重绘。
+- 悬停工具条提供 `源码`（切回代码块）/ `复制 mermaid 源码` / `下载 SVG`；流式输出期间保留官方代码块，语法错误或 chunk 不可用时回落代码块并显示一行提示。
+- 安全配置：`securityLevel: "strict"`、`suppressErrorRendering: true`、`maxTextSize: 50000`，并对渲染出的 SVG 再做一次清洗（去 `<script>`、`on*` 事件属性与 `javascript:` 协议）。
+- 图表可**点击放大**：全屏浮层内提供 `−` / 比例 / `+` / `✕`，支持 Esc 关闭、`+` `-` 缩放、`0` 复原，点浮层外空白也关闭；焦点可回到原图表。
+- `下载 SVG` 的产物保证是**合法 XML**：mermaid 在 `foreignObject` 里输出的裸空元素（如 `<br>`）补成自闭合、HTML 实体（`&nbsp;` 等）转数字实体、裸 `&` 转义；否则用浏览器或设计工具直接打开会报 `Opening and ending tag mismatch: br … and p`。
+
+**改动：「设置 → 通用」开关行由 4 行增为 7 行**
+
+- 新增「侧栏账户行设置按钮」「账户菜单语言切换」「mermaid 流程图」三行，默认开启。
+- 顺序改为从 `order = 90.5` 起步、步长 `0.5`（90.5 / 91 / 91.5 / 92 / 92.5 / 93 / 93.5），整组排在官方「更新渠道」行（order 95）**上方**，并给后续新增开关留出插入位。
+
+**工程与测试**
+
+- 新增 `lib/account-extras.js`：语言快照清洗、语言名查找、导航下标稳定排序、收起态判定的纯逻辑镜像。
+- 新增 `test/account-extras.test.mjs`（5 项）与 `test/account-extras-browser.test.mjs`（6 项，覆盖齿轮常驻 / store 句柄直达 / 降级为菜单项 / 收起态、语言行位置与浮层、开关即时生效、主题图标化）。
+- 新增 `lib/mermaid.js`（门控真值表 / 主题 token 映射 / SVG 清洗 / 缓存裁剪 / 文件名 / 错误摘要的纯逻辑镜像）、`lib/client.mermaid-11.17.2.js`（mermaid 11.17.2 懒加载 chunk）与 `scripts/build-mermaid-chunk.mjs`（从 npm 包重建 chunk，含 sha256 校验与 MIT 头注释）。
+- 新增 `test/mermaid.test.mjs`（10 项离线用例：门控、主题映射、缓存裁剪、文件名、错误摘要，以及裸空元素 / HTML 实体 / 裸 `&` 的 XML 修复）与 `test/mermaid-browser.test.mjs`（8 项真实 DOM 用例：流式透出代码块、结束后换图、chunk 单例、源码切换、点击放大浮层、复制、语法失败与 chunk 失败回落、主题重绘、关开关降级）。
+- 词典键 62 → 85；单元测试 81 → 96、浏览器回归 26 → 40，全量 136 项通过（浏览器用例需官方运行时与 Playwright，未提供时跳过）。
+- README / README_en / NOTICE 同步：版本徽章、安装命令、Release 链接、支持范围（DSH `0.2.2-rc.5`）、覆盖清单与结构树。
+
+### English
+
+**Added: settings gear in the sidebar account row**
+
+- A settings gear now sits at the right end of the account row (avatar + name) at the sidebar foot, reusing DSH's built-in settings icon (`dsw-icon-settings-outline-medium` from the icon sprite); one click opens Settings → General.
+- Three-step open fallback: first the shell's internal store handle (`store.create().actions.openSection('general')` off the `settings.launcher` seat); when that internal field is unavailable it degrades to opening the account menu and clicking its Settings item, then to the General nav item; if everything fails only the tooltip changes to "Could not open the settings panel".
+- Always visible with a 32×32 hit area; hidden while the sidebar is collapsed (`data-collapsed="true"`) and the reserved padding is dropped with it; works signed out as well.
+
+**Added: language picker in the account menu**
+
+- A language row now sits directly above the official Settings item: official globe icon, "Language", and the current language's native name.
+- Clicking it expands a checked flyout beside the row; the list and names come straight from the official locale snapshot (currently eight: 中文 / English / 日本語 / Español / Français / Deutsch / Русский / Português), so a language DSH adds later appears automatically.
+- A pick only closes the flyout and keeps the account menu open, switching the UI language immediately; `Enter` / `Space` / `→` expand, `↑` / `↓` move, `Esc` collapses and returns focus; the flyout flips sides when short on space and degrades to an inline expansion when the menu card would clip it.
+
+**Changed: account-menu theme strip now uses the official icons**
+
+- The three text labels (`System` / `Light` / `Dark`) become the official sun / moon / monitor icons (`followsystem-outline` / `light-outline` / `dark-outline`, 16px); the 32px track, 26px slots and selected state are unchanged, and accessible names are preserved through `aria-label`.
+- Icons prefer the official sprite's `<use>` reference; when the sprite is missing at runtime the plugin's own matching SVG is used.
+
+**Added: inline mermaid diagrams in replies**
+
+- Chat-stream fences tagged `mermaid` (assistant replies, user messages and reasoning blocks alike) are rendered to SVG in place once the message settles, through the official `conversation.chat.markdown.fence` hoc seat keyed by fence language; the official Markdown renderer itself is not replaced.
+- mermaid `11.17.2` (MIT) is lazily loaded as its own chunk: fetched the first time a diagram appears and reused afterwards; renders are queued serially, and a theme change invalidates the cache and redraws with the new tokens.
+- The hover toolbar offers `Source` (back to the code block), `Copy mermaid source` and `Download SVG`; while streaming, the official code block stays, and a syntax error or an unavailable chunk falls back to it with a one-line hint.
+- Safety: `securityLevel: "strict"`, `suppressErrorRendering: true`, `maxTextSize: 50000`, plus a second sanitising pass on the produced SVG (no `<script>`, no `on*` handlers, no `javascript:` URLs).
+- Diagrams can be **enlarged**: a full-screen overlay offers `−` / ratio / `+` / `✕`, closes on Esc or a backdrop click, zooms with `+` `-` and resets with `0`, and restores focus to the diagram.
+- `Download SVG` now saves **well-formed XML**: bare void tags such as `<br>` that mermaid emits inside `foreignObject` become self-closing, HTML entities (`&nbsp;` and friends) become numeric ones and bare `&` is escaped; without this, opening the file in a browser or design tool fails with `Opening and ending tag mismatch: br … and p`.
+
+**Changed: Settings → General switch rows grow from four to seven**
+
+- Adds "Settings button in the sidebar account row", "Language switch in the account menu" and "Mermaid diagram rendering in replies", all on by default.
+- Ordering now starts at `order = 90.5` in `0.5` steps (90.5 / 91 / 91.5 / 92 / 92.5 / 93 / 93.5), putting the whole group **above** the official "Update channel" row (order 95) while still leaving slots for later switches.
+
+**Engineering and tests**
+
+- New `lib/account-extras.js`: a pure-logic mirror for locale-snapshot cleaning, native-name lookup, stable nav-index sorting and collapsed-state detection.
+- New `test/account-extras.test.mjs` (5 cases) and `test/account-extras-browser.test.mjs` (6 cases covering the always-on gear / store-handle path / menu-item fallback / collapsed state, the language row and its flyout, instant switch effect and the icon-ised theme strip).
+- New `lib/mermaid.js` (pure-logic mirror for the gating truth table / theme-token mapping / SVG sanitising / cache trimming / file name / error summary), `lib/client.mermaid-11.17.2.js` (the lazy mermaid 11.17.2 chunk) and `scripts/build-mermaid-chunk.mjs` (rebuilds the chunk from the npm package with a sha256 check and the MIT header).
+- New `test/mermaid.test.mjs` (10 offline cases: gating, theme mapping, cache trimming, file name, error summary, and the XML repairs for bare void tags / HTML entities / bare `&`) and `test/mermaid-browser.test.mjs` (8 real-DOM cases: code block while streaming, swap after settling, chunk singleton, source toggle, enlarge overlay, copy, syntax and chunk failures, theme redraw, switch-off fallback).
+- Locale keys 62 → 85; unit tests 81 → 96, browser regressions 26 → 40; all 136 tests pass (browser cases are skipped without the official runtime and Playwright).
+- README / README_en / NOTICE updated: version badge, install commands, release links, supported scope (DSH `0.2.2-rc.5`), coverage checklist and file tree.
+
+---
+
 ## v0.8.0
 
 ### 中文

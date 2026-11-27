@@ -1,11 +1,12 @@
 {
-  "name": "dsh-session-plus",
-  "version": "0.8.0",
-  "description": "会话增强插件：模型选择菜单顶部实时展示当前模型提供商名称；账户菜单顶部提供「跟随系统 / 浅色 / 深色」主题快捷切换（Rubber Segment 动效）；官方模型菜单「推理等级」一行改造为 Codex 风格连续滑条（一档一色 + 最高档能量层）；新建会话页标题栏补上官方「在应用中打开」分体按钮（固定定位在标题栏按钮簇最左侧，右侧面板展开时隐藏）；「设置 → 通用」里为以上每一项提供独立开关（复用官方 Switch 组件，样式与官方行一致），切换即时生效。",
+  "name": "@ycet/dsh-session-plus",
+  "version": "0.9.0",
+  "description": "会话增强插件：模型选择菜单顶部实时展示当前模型提供商名称；账户菜单顶部提供「跟随系统 / 浅色 / 深色」主题快捷切换（Rubber Segment 动效，v0.9.0 起用具官方太阳 / 月亮 / 显示器图标）；官方模型菜单「推理等级」一行改造为 Codex 风格连续滑条（一档一色 + 最高档能量层）；新建会话页标题栏补上官方「在应用中打开」分体按钮；侧栏账户行右侧常驻设置齿轮（一键直达通用设置）；账户菜单新增语言切换（读取官方 locale 快照的 8 种语言）；助手回复里的 mermaid 代码块自动渲染为 SVG（懒加载 mermaid 11.17.2，源码 / 复制 / 下载工具条，跟随主题）；「设置 → 通用」里为以上七项各提供一个独立开关（复用官方 Switch 组件）。",
   "type": "module",
   "main": "lib/index.js",
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "build:mermaid": "node scripts/build-mermaid-chunk.mjs"
   },
   "exports": {
     ".": {
@@ -38,7 +39,21 @@
     "README_en.md",
     "README.md",
     "CHANGELOG.md",
-    "NOTICE.md"
+    "NOTICE.md",
+    "scripts"
   ],
+  "author": "Ycet",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ycet/dsh-session-plus.git"
+  },
+  "homepage": "https://github.com/Ycet/dsh-session-plus#readme",
+  "bugs": {
+    "url": "https://github.com/Ycet/dsh-session-plus/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "license": "MIT"
 }

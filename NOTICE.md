@@ -80,3 +80,24 @@ SOFTWARE.
 - **使用位置**：`lib/client.js` 中「功能 5：通用设置开关」的 `FeatureToggleRow`（v0.7.1 起），以及 `test/session-plus-v070-browser.test.mjs` 的样式比对用例
 - **使用方式**：**运行时直接 `require` 官方原语并渲染其 `Switch` 组件**（与官方「在使用官方模型 API 时上传 Session Log」行同一个组件、同一份 CSS），未复制其源代码；仅在原语不可用的旧运行时退回自绘开关，该兜底样式的几何与 token 参考官方 `Switch.module.css`（36×20 轨道、16px 圆形滑块、`corner-shape:round`）。
 - **许可证**：MIT（文本同上，Copyright (c) 2026 DeepSeek）
+
+---
+
+## DSH 内置图标精灵（DeepSeek Harness）
+
+- **来源**：DeepSeek Harness 官方客户端运行时生成的图标精灵（`<svg data-dsh-icon-sprite>` 内的 `<symbol id="dsw-icon-<name>-<variant>">`），随 DSH 桌面版 `0.2.2-rc.5` 核对
+- **使用位置**：`lib/client.js` 的 `iconNode()`——账户行设置齿轮（`settings-outline`）、账户菜单语言行（`globe-outline`）、主题三态条（`light-outline` / `dark-outline` / `followsystem-outline`）、语言浮层勾选（`check`）
+- **使用方式**：**运行时按符号 id 引用官方精灵**（`<svg data-icon="dsw-icon-…"><use href="#dsw-icon-…"/></svg>`），未复制任何官方图标路径数据；仅当运行时缺少该精灵时，退回本插件自绘的同形 SVG（`ICON_FALLBACKS`，路径为按官方视觉自行描述的几何，非官方源码）。
+- **许可证**：MIT（DeepSeek Harness 官方组件，文本同上）
+
+---
+
+## mermaid（mermaid-js）
+
+- **来源**：npm 包 `mermaid@11.17.2` 的 `dist/mermaid.min.js`（官方预构建 IIFE 单文件产物，文件末尾把库挂到 `globalThis["mermaid"]`）
+- **来源校验**：下载后按 SHA-256 校验，原文件 `dist/mermaid.min.js` 摘要为
+  `581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8`（3,572,661 字节）
+- **使用位置**：`lib/client.mermaid-11.17.2.js`（懒加载 chunk，仅当回复里出现 mermaid 图且功能 8 开关打开时才被 `require.async` 拉取）
+- **使用方式**：由 `scripts/build-mermaid-chunk.mjs` 把上述预构建产物**原样**包进一个 `window.__ModuleLoader__.load({ id, chunk, factory })` 外壳，未修改、未拆分、未转译其代码；产物 chunk 的 SHA-256 为
+  `5a87cc8c2bd101fba5c897792e7926c315fe699567cd79ce8a07b0f6fda183e4`（3,573,157 字节）
+- **许可证**：MIT · `Copyright (c) 2014 - 2022 Knut Sveidqvist`（完整 MIT 文本见 npm 包的 `LICENSE`，与本文件其它 MIT 段落文本一致）

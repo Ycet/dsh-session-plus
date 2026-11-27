@@ -6,10 +6,14 @@
 // 删掉宿主半区或让它无法成 fiber，会让浏览器半区的全部功能一起静默失效。
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import * as host from "../lib/index.js";
 
-test("宿主半区：导出插件名 dsh-session-plus", () => {
-	assert.equal(host.name, "dsh-session-plus");
+// 插件名必须等于 package.json 的 name（npm 发布名为 @ycet/dsh-session-plus）。
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+
+test("宿主半区：导出插件名与 package.json 的 name 一致", () => {
+	assert.equal(host.name, pkg.name);
 });
 
 test("宿主半区：导出面精确为 name + apply，且不再声明 inject", () => {

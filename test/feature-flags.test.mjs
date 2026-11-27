@@ -1,6 +1,6 @@
 // dsh-session-plus — v0.7.0 功能开关仓库的离线测试（node:test）
 //
-// 覆盖：默认全开、localStorage 持久化与容错、订阅通知去重、4 个设置行的
+// 覆盖：默认全开、localStorage 持久化与容错、订阅通知去重、设置行的
 // 功能映射与文案键完整性。这些用例不需要真实 DOM / React：开关仓库与设置行
 // 元数据都在 bundle 的 __internals 接缝上。
 import { test } from "node:test";
@@ -76,7 +76,7 @@ function applyWithCapture({ storage } = {}) {
 	return { mod, seen };
 }
 
-test("开关：默认 4 项全开", () => {
+test("开关：默认 7 项全开", () => {
 	const { mod } = loadBundle({ storage: fakeStorage() });
 	const internals = mod.__internals;
 	assert.deepEqual(internals.FEATURE_IDS, [
@@ -84,12 +84,18 @@ test("开关：默认 4 项全开", () => {
 		"theme-switch",
 		"effort-slider",
 		"open-in-session",
+		"settings-gear",
+		"account-language",
+		"mermaid-diagram",
 	]);
 	assert.deepEqual(internals.featureFlags.snapshot(), {
 		"provider-header": true,
 		"theme-switch": true,
 		"effort-slider": true,
 		"open-in-session": true,
+		"settings-gear": true,
+		"account-language": true,
+		"mermaid-diagram": true,
 	});
 });
 
@@ -125,6 +131,9 @@ test("开关：JSON 损坏 / 非对象 / 非法值一律退回默认，不抛错
 			"theme-switch": true,
 			"effort-slider": true,
 			"open-in-session": true,
+			"settings-gear": true,
+			"account-language": true,
+			"mermaid-diagram": true,
 		}, `损坏内容 ${raw} 必须退回默认`);
 	}
 });
@@ -178,16 +187,16 @@ test("开关：toggle 取反，reset 后重新从 localStorage 读取", () => {
 	assert.equal(flags.get("provider-header"), true);
 });
 
-test("设置行：4 行与 4 个功能一一对应、order 递增、文案键中英齐备", () => {
+test("设置行：7 行与 7 个功能一一对应、order 递增、文案键中英齐备", () => {
 	const { mod, seen } = applyWithCapture({ storage: fakeStorage() });
 	const rows = mod.__internals.FEATURE_ROWS;
-	assert.equal(rows.length, 4);
+	assert.equal(rows.length, 7);
 	assert.deepEqual(rows.map((row) => row.feature), mod.__internals.FEATURE_IDS, "开关顺序必须与功能清单一致");
 
 	const settings = seen.registrations.filter((spec) => spec.name === "settings.general.item");
-	assert.equal(settings.length, 4);
+	assert.equal(settings.length, 7);
 	assert.deepEqual(settings.map((spec) => spec.id), rows.map((row) => row.id));
-	assert.deepEqual(settings.map((spec) => spec.order), [91, 92, 93, 94]);
+	assert.deepEqual(settings.map((spec) => spec.order), [90.5, 91, 91.5, 92, 92.5, 93, 93.5]);
 	for (const spec of settings) assert.equal(spec.locale, "sessionPlus");
 
 	const dicts = seen.locales[0];

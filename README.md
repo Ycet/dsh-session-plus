@@ -2,27 +2,30 @@
 
 # dsh-session-plus
 
-**会话增强插件：模型提供商头部 · 账户菜单三态主题切换 · Codex 风格推理等级滑条 · 新建会话页「在应用中打开」按钮 —— 每一项都在「设置 → 通用」里有独立开关**
+**会话增强插件：模型提供商头部 · 账户菜单三态主题切换（官方主题图标） · Codex 风格推理等级滑条 · 新建会话页「在应用中打开」按钮 · 侧栏账户行设置齿轮 · 账户菜单语言切换 —— 每一项都在「设置 → 通用」里有独立开关**
 
 [![中文](https://img.shields.io/badge/简体中文-red?style=for-the-badge)](README.md)
 [![English](https://img.shields.io/badge/English-blue?style=for-the-badge)](README_en.md)
 
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.3-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v0.8.0-blue?style=for-the-badge)
+![DSH](https://img.shields.io/badge/DSH-0.2.2--rc.5-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v0.9.0-blue?style=for-the-badge)
 
 </div>
 
 <!-- 预览图占位：补充截图 / GIF 后替换本注释，勿链接不存在的图片。
-<p align="center"><img src="docs/preview.gif" alt="dsh-session-plus 效果预览" width="720"></p>
+<!-- 预览图占位：仓库暂无 docs/preview.gif；补图后替换本注释为 <img src="docs/preview.gif" alt="dsh-session-plus 效果预览" width="720"> -->
 -->
 
-**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供四项轻量增强 + 一个统一开关面板：
+**dsh-session-plus** 是 [DeepSeek Harness](https://github.com/deepseek-ai)（DSH）的会话增强插件，提供七项轻量增强 + 一个统一开关面板：
 
 - 🏷 模型选择菜单顶部**实时展示**当前请求使用的模型提供商
 - 🎚 账户菜单最上方提供 `跟随系统 / 浅色 / 深色` **主题快捷切换**（react-bits Rubber Segment 动效）
 - 🎛 官方模型菜单「推理等级」一行改造为 **Codex 风格连续滑条**（一档一色 + 最高档能量层，迁自 `dsh-codex-effort-slider`）
 - 🪟 新建会话页标题栏补上 **Open In… 分体按钮**（官方只在对话页提供；固定定位在整组按钮最左侧，右侧面板展开时自动隐藏）
+- ⚙️ 侧栏底部账户行右侧常驻**设置齿轮**（直接复用 DSH 内置设置图标），点击直达「设置 → 通用」
+- 🌐 账户菜单「设置」上方新增**语言项**（官方地球图标 + 当前语言原生名），展开即可切换 DSH 支持的 8 种界面语言
+- 🧜 助手回复、用户消息与推理块里的 **mermaid 代码块自动渲染为 SVG 图**（内置 11.17.2 懒加载 chunk，图表 / 源码 / 复制 / 下载 SVG 四态工具条，实时跟随主题）
 - ⚙️ 「设置 → 通用」里为以上**每一项**提供独立开关（直接复用官方 `Switch` 组件，样式与官方行一致），即时生效、可随时关掉
 
 > [!NOTE]
@@ -59,7 +62,7 @@
 | 特性 | 说明 |
 |---|---|
 | 菜单最上方 | 在账户菜单（`设置` / `意见反馈` / `退出登录`）弹层顶部注入三态切换条，位于「设置」之上 |
-| 三态切换 | `跟随系统` / `浅色` / `深色`；与「设置 → 通用 → 外观」共用同一条偏好，任一处修改另一处即时同步 |
+| 三态切换 | `跟随系统` / `浅色` / `深色`；v0.9.0 起改用官方太阳 / 月亮 / 显示器**图标**代替文字，槽位尺寸与选中态不变；与「设置 → 通用 → 外观」共用同一条偏好，任一处修改另一处即时同步 |
 | Rubber Segment | 还原 react-bits 橡胶滑块：跨段拉伸 → 收缩落位挤压，支持按住拖拽与甩动惯量；`prefers-reduced-motion` 下直接落位 |
 | 键鼠一致 | 方向键 / Home / End 切换；滑块刻意不使用 `button`，因此菜单原有的焦点与方向键序列完全不变 |
 | 不打断操作 | 点击或拖拽切换后菜单保持打开，可连续比较三种主题 |
@@ -97,35 +100,84 @@
 | 安全降级 | 官方应用目录路由不可用或返回空列表时整颗按钮不渲染（与官方一致），其余功能不受影响 |
 | 文案署名 | 按钮文案与 34 个应用显示名镜像官方 `@deepseek-ai/dsh-client-ui-open-in-app`（MIT），见 [NOTICE.md](NOTICE.md) |
 
-### 5️⃣ 通用设置里的逐项开关
+### 5️⃣ 侧栏账户行设置齿轮
 
 | 特性 | 说明 |
 |---|---|
-| 位置 | 「设置 → 通用」，紧接官方「在使用官方模型 API 时上传 Session Log」行**下方**、「当前版本」行上方 |
-| 四项独立 | 提供商头部 / 账户菜单主题切换 / 推理等级滑条 / 新建会话页按钮，各一个开关，互不影响 |
+| 位置 | 侧栏底部账户行（头像 + 用户名）的**右侧**，常驻显示，不随账户菜单开合出现或消失 |
+| 官方图标 | 直接复用 DSH 内置设置图标（图标精灵 `dsw-icon-settings-outline-medium`）；运行时没有该精灵时退回本插件自绘的齿轮 SVG，外观一致 |
+| 一键直达 | 点击直接打开「设置 → 通用」，不再需要「点开账户卡片 → 点设置」两步 |
+| 三级兜底 | 先调用官方设置外壳的内部 store 句柄（`settings.launcher` 席位的 `store.create().actions.openSection('general')`）；内部字段不可用时自动降级为「展开账户菜单 → 点设置项 → 点通用设置」，全程无感 |
+| 收起态隐藏 | 侧栏收起（`data-collapsed="true"`）时不显示，避免与头像叠压；同时自动撤掉账户行给齿轮让出的内边距 |
+| 未登录也显示 | 未登录时账户行依旧存在，齿轮照常可点（设置面板与登录状态无关） |
+| 安全降级 | 找不到账户行、或账户行被第三方侧栏接管时静默不注入；设置面板打不开时只把悬停提示改成「无法打开设置面板」，不影响其它功能 |
+
+### 6️⃣ 账户菜单语言切换
+
+| 特性 | 说明 |
+|---|---|
+| 位置 | 账户菜单里紧贴官方「设置」项的**上方**（主题三态条与余额行之下） |
+| 行内容 | 左侧官方地球图标、中间「语言」、右侧当前语言的**原生名**（`中文` / `English` / `日本語` …），位置与官方「设置」行的快捷键提示一致 |
+| 语言来源 | 直接读官方 locale 快照：官方支持哪些语言就列哪些、用什么名字就显示什么名字、顺序也一致（当前 8 种：中文 / English / 日本語 / Español / Français / Deutsch / Русский / Português）；官方以后新增语言会自动出现 |
+| 选择方式 | 点语言行在该行旁展开二级浮层（当前项带勾选）；选完只收起浮层、账户菜单保持打开；选择立即写入官方 locale，界面即时切换 |
+| 键鼠一致 | `Enter` / `Space` / `→` 展开浮层，`↑` / `↓` 在语言间移动，`Esc` 收起并回焦到语言行；点浮层外部同样收起 |
+| 内置语言行不受影响 | 官方「设置 → 通用 → 语言」那一行保持原样；两处改的是同一个偏好，互相同步 |
+| 安全降级 | locale 服务缺失时整行不出现；菜单结构变化导致定位不到「设置」项时静默不注入 |
+
+### 7️⃣ 通用设置里的逐项开关
+
+| 特性 | 说明 |
+|---|---|
+| 位置 | 「设置 → 通用」，紧接官方「在使用官方模型 API 时上传 Session Log」行**下方**、官方「更新渠道」行**上方**（order 从 90.5 起、步长 0.5，整体落在 90 与 95 之间） |
+| 七项独立 | 提供商头部 / 账户菜单主题切换 / 推理等级滑条 / 新建会话页按钮 / 侧栏账户行设置齿轮 / 账户菜单语言切换 / mermaid 图表，各一个开关，互不影响 |
 | 即时生效 | 关掉后对应 UI 与注入立即移除（定时器、监听、DOM、样式一并回收），重新打开立即回来，无需刷新或重启 |
 | 官方同款 | 直接复用官方 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch` 组件——与官方设置行同一组件、同一份 CSS（含 `corner-shape:round`），计算样式逐项一致；旧运行时没有该原语时退回自绘开关（CSS 镜像官方） |
 | 原生回退 | 关闭「推理等级滑条」后，官方原生「推理等级」行原样回来（行高、折行、内边距全部还原） |
-| 默认全开 | 升级后行为保持不变；偏好存在浏览器 `localStorage` 的 `dsh.session-plus.features.v1` |
+| 默认全开 | v0.9.0 新增的三项（齿轮 / 语言 / mermaid）也默认开启；偏好存在浏览器 `localStorage` 的 `dsh.session-plus.features.v1` |
 | 容错 | `localStorage` 不可用或内容损坏时退回「全开」并在内存生效，不报错 |
+
+### 8️⃣ mermaid 流程图自动渲染
+
+| 特性 | 说明 |
+|---|---|
+| 触发条件 | 聊天流里语言为 `mermaid` 的围栏代码块（助手回复、用户消息、推理块统一处理），且「功能 8」开关打开 |
+| 渲染结果 | 并在原位替换为 SVG：宽度跟随消息列（最大 100%），高度超过 520px 时框内纵向滚动，超宽图横向滚动 |
+| 懒加载 | 内置 mermaid `11.17.2`（MIT）作为独立 chunk，**首次出现 mermaid 图时才下载**；此后同一页面只加载一次，渲染串行排队 |
+| 流式输出 | 文本仍在流式生成时保留官方代码块，消息结束后自动换成图；不会出现半成品报错 |
+| 工具条 | 悬停图表右上角出现：`源码`（切回代码块）/ `复制 mermaid 源码` / `下载 SVG`（文件名 `mermaid-YYYYMMDD-HHmmss.svg`） |
+| 放大查看 | 点击图表（或聚焦后按 Enter / 空格）打开全屏浮层：`−` / 比例 / `+` / `✕`，支持 Esc 关闭、`+` `-` 缩放、`0` 复原；点浮层外空白也关闭 |
+| 下载兼容 | 保存的 SVG 是合法 XML：mermaid 输出的裸空元素（如 `<br>`）补成自闭合、HTML 实体转数字实体、裸 `&` 转义，用浏览器 / 设计工具直接打开不会报 tag mismatch |
+| 主题跟随 | 从 `--dsw-alias-*` 取色映射为 mermaid `themeVariables`；浅 / 深色切换时缓存失效并按新主题重绘 |
+| 失败降级 | 语法错误或 chunk 不可用时回落官方代码块 + 一行小字提示（悬停可看原始错误），不影响会话其它内容 |
+| 安全 | `securityLevel: "strict"`、`suppressErrorRendering: true`、`maxTextSize: 50000`；渲染出的 SVG 再做一次清洗（去 `<script>`、`on*` 事件属性与 `javascript:` 协议） |
 
 ---
 
 ## 🚀 快速开始
 
-### 1. Web 端安装
+> [!NOTE]
+> npm 包名为 **`@ycet/dsh-session-plus`**：无作用域的 `dsh-session-plus` 已被其他作者占用，与本插件不是同一个项目。
+
+### 1. 从 npm 安装（推荐，支持插件页一键更新）
+
+```bash
+# Web 端
+dsh plugin --profile web add @ycet/dsh-session-plus@0.9.0
+
+# 桌面端：先完全退出 DeepSeek Harness，再用应用自带 CLI
+"<path-to-desktop-cli>" plugin --profile desktop add @ycet/dsh-session-plus@0.9.0
+```
+
+### 2. 从本地源码安装
 
 ```bash
 cd <absolute-path-to-plugin> && pnpm install
-dsh plugin --profile web add "dsh-session-plus@link:<absolute-path-to-plugin>"
-```
 
-### 桌面端安装
+# Web 端
+dsh plugin --profile web add "@ycet/dsh-session-plus@link:<absolute-path-to-plugin>"
 
-当前版本：**v0.8.0**。先完全退出 DeepSeek Harness，再使用应用自带 CLI 安装到 `desktop` profile；旧 Web CLI 不能管理该保留 profile。
-
-```bash
-"<path-to-desktop-cli>" plugin --profile desktop add "dsh-session-plus@link:<absolute-path-to-plugin>"
+# 桌面端（当前版本：**v0.9.0**）
+"<path-to-desktop-cli>" plugin --profile desktop add "@ycet/dsh-session-plus@link:<absolute-path-to-plugin>"
 ```
 
 macOS 默认安装位置的 CLI 为 `/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`。插件路径可含空格，保留命令中的引号。安装后重新打开桌面应用。
@@ -134,20 +186,20 @@ macOS 默认安装位置的 CLI 为 `/Applications/DeepSeek Harness.app/Contents
 
 ```bash
 # 方式一：GitHub 依赖（锁定版本 tag，需本机有 git）
-dsh plugin --profile web add "github:Ycet/dsh-session-plus#v0.8.0"
+dsh plugin --profile web add "github:Ycet/dsh-session-plus#v0.9.0"
 # 桌面端：把 --profile web 换成 --profile desktop（使用桌面端自带 CLI）
 
 # 方式二：Release 资产 tarball（无需 git）
-dsh plugin --profile web add "https://github.com/Ycet/dsh-session-plus/releases/download/v0.8.0/dsh-session-plus-0.8.0.tgz"
+dsh plugin --profile web add "https://github.com/Ycet/dsh-session-plus/releases/download/v0.9.0/dsh-session-plus-0.9.0.tgz"
 ```
 
 卸载同样需退出应用，再运行：
 
 ```bash
-"<path-to-desktop-cli>" plugin --profile desktop remove dsh-session-plus
+"<path-to-desktop-cli>" plugin --profile desktop remove @ycet/dsh-session-plus
 ```
 
-### 2. Web 端重启并验证
+### 3. Web 端重启并验证
 
 本插件为 **bundle 层插件**，安装后需重启 `dsh web` 才生效：
 
@@ -169,6 +221,8 @@ npm exec @deepseek-ai/dsh web
 <details>
 <summary>点击展开</summary>
 
+**v0.9.0**：新增侧栏账户行**设置齿轮**（官方设置图标，一键直达「设置 → 通用」；打开设置优先走官方外壳内部 store 句柄，缺失时自动降级为「账户菜单 → 设置项」，再走通用设置导航；侧栏收起时隐藏）与账户菜单**语言切换**（紧贴「设置」上方，读取官方 locale 快照的 8 种语言，二级浮层带勾选，选完只收浮层、菜单保持打开）；账户菜单主题三态条改用官方太阳 / 月亮 / 显示器图标，槽位尺寸与选中态不变；「设置 → 通用」开关行由 4 行增为 6 行，order 改为 90.5 起步、步长 0.5，整体排在官方「更新渠道」行之上并给后续开关留位；新增 `lib/account-extras.js` 纯逻辑镜像与对应单测，以及账户行 / 语言行 / 主题图标浏览器回归。最后一个功能是**回复内 mermaid 流程图自动渲染**：走官方 `conversation.chat.markdown.fence` hoc 席位按语言分派（不动官方 Markdown 渲染器），内置 mermaid `11.17.2` 作为独立懒加载 chunk（首次出现图才下载），支持源码 / 复制 / 下载 SVG 三种操作与主题跟随，失败回落官方代码块；「设置 → 通用」开关行随之由 6 行增为 7 行（order 90.5–93.5，仍在官方「更新渠道」之上）。新增 `lib/mermaid.js` 纯逻辑镜像、`scripts/build-mermaid-chunk.mjs` 生成脚本与 mermaid 单测 / 浏览器回归。单元测试 86 → 96、浏览器回归 32 → 40，全量 136 项通过；mermaid 图表支持点击放大与合法 XML 下载。
+
 **v0.8.0**：按产品决定移除「选中文本 → 添加至对话」并下线对应设置开关。聊天页 / 右侧预览选中文字后的浮动「添加至对话」按钮、代码块拼接纯函数（`lib/insert.js`）、`.sp-add-btn` 样式与「设置 → 通用」里对应的一行开关全部删除；开关行由 5 行变为 4 行（order 91–94），其余四项能力不受影响。旧 `localStorage` 中的 `selection-add` 键会被忽略（只读取已知功能 id），不需要手动清理。单元测试 87 → 81、浏览器回归 31 → 26（v0.7.2 后的基线），全量 107 项通过。
 
 **v0.7.2**：推理等级行定位去掉「官方根面板恰好两个 menuitem」的硬约束——官方 0.2.2 的根面板仍是「模型 / 推理等级」两行，但行数并非契约，多出一行时旧实现会静默不注入滑条；改为优先按文案认，认不出再按「第 2 行是推理等级」的官方固定顺序，只有一行（模型无推理档位）时才返回空。同时补上 `engines.dsh: >=0.2.1-rc.2`，让 DSH 的插件兼容性门禁对本事生效。
@@ -188,7 +242,7 @@ npm exec @deepseek-ai/dsh web
 **回滚**：
 
 ```bash
-dsh plugin --profile web remove dsh-session-plus
+dsh plugin --profile web remove @ycet/dsh-session-plus
 # 重启 dsh web 完成卸载
 ```
 
@@ -230,9 +284,34 @@ dsh plugin --profile web remove dsh-session-plus
 - **失败**：宿主拒绝或网络失败时提示「打开失败，请重试」。
 - **边界**：宿主没有可用的本地应用、或会话还没有工作区目录时不显示。
 
+### 侧栏账户行设置齿轮
+
+- **位置**：侧栏底部账户行（头像 + 用户名）右侧，常驻显示。
+- **操作**：点一下直接打开「设置 → 通用」。若官方外壳的内部 store 句柄不可用，会自动改为「展开账户菜单 → 点设置项 → 点通用设置」，用户无需区分。
+- **收起态**：侧栏收起时不显示，账户行也不会给它留出内边距。
+- **边界**：账户行被第三方侧栏接管、或设置面板确实打不开时，齿轮只把悬停提示换成「无法打开设置面板」，不影响其它功能。
+
+### 账户菜单语言切换
+
+- **位置**：账户菜单里官方「设置」行的正上方。
+- **操作**：点语言行展开二级浮层，选一个语言后浮层收起、菜单保持打开，界面语言立即切换。
+- **键盘**：`Enter` / `Space` / `→` 展开，`↑` / `↓` 移动，`Esc` 收起并回到语言行；点浮层外部也会收起。
+- **语言范围**：跟随官方 locale 快照（当前 8 种），官方新增语言后自动出现；与官方「设置 → 通用 → 语言」同一偏好，互相同步。
+
+### mermaid 流程图
+
+- **位置**：聊天流里语言标记为 `mermaid` 的围栏代码块原位（助手回复、用户消息、推理块都会处理）。
+- **行为**：消息结束（不再流式输出）后自动渲染为 SVG；渲染期间保留代码块，不会闪现半成品。
+- **工具条**：鼠标悬停图表右上角出现按钮——`源码` 切回代码块再点 `mermaid 图表` 切回图；`复制 mermaid 源码` 复制原文；`下载 SVG` 保存为 `mermaid-<时间戳>.svg`。
+- **放大查看**：点图表任意位置打开全屏浮层（`−` / 比例 / `+` / `✕`，Esc 关闭，`+` `-` 缩放，`0` 复原，点浮层外空白也关闭）。
+- **下载**：`下载 SVG` 保存为 `mermaid-<时间戳>.svg`，文件是合法 XML（裸 `<br>` 等空元素已补自闭合、HTML 实体转数字实体、裸 `&` 转义），可直接用浏览器或设计工具打开。
+- **主题**：图表配色取自当前 DSH 主题 token，切浅 / 深色即时重绘。
+- **失败**：语法错误或图表库取不到时回落代码块，并显示一行「图表渲染失败，已显示源码」；鼠标停在该提示上可看到解析器给出的原始错误。
+- **边界**：走官方 `conversation.chat.markdown.fence` 席位（DSH 0.2.2 起提供）；该席位不存在的运行时里图标层不注册，回复保持官方代码块，不影响其它功能。
+
 ### 通用设置开关
 
-- **位置**：「设置 → 通用」，官方「在使用官方模型 API 时上传 Session Log」行下方。
+- **位置**：「设置 → 通用」，官方「在使用官方模型 API 时上传 Session Log」行下方、官方「更新渠道」行上方。
 - **用法**：点右侧开关即可；开关是官方 `Switch` 组件，与官方设置行外观一致；关闭后相关 UI 立刻消失，重新打开立刻回来。
 - **持久化**：偏好保存在浏览器 `localStorage`（键 `dsh.session-plus.features.v1`）。若本地服务端口变化导致页面 origin 改变，偏好会回到默认「全开」——这是浏览器存储的固有限制，故默认值刻意选为「全开」。
 
@@ -240,12 +319,15 @@ dsh plugin --profile web remove dsh-session-plus
 
 | 项目 | 范围 |
 |---|---|
-| DSH | 桌面 `0.2.1-rc.3`（本版按该版本包体核对）；保留旧版 Web 的 `menu` 菜单识别兼容 |
+| DSH | 桌面 `0.2.2-rc.5`（本版按该版本包体核对）；保留旧版 Web 的 `menu` 菜单识别兼容 |
 | 平台 | 官方桌面前端由浏览器夹具验证；Windows 原生桌面未实测 |
 | 主题切换 | 依赖官方 `settings.launcher` 席位与 `role="menu"` 弹层结构，结构变化时静默降级 |
+| 设置齿轮 | 依赖官方账户行结构（`data-inset` 容器 + `[aria-haspopup="menu"]` 触发器）与图标精灵 `dsw-icon-settings-outline-medium`；打开设置优先用 `settings.launcher` 内部 store 句柄，缺失时退化为菜单点击，全部失败时只换悬停提示、不改动状态 |
+| 账户菜单语言 | 依赖官方账户菜单「设置」项与 `locale` 服务的 `getSnapshot()` / `setLocale()`；任一缺失时静默不注入 |
 | 推理等级滑条 | 依赖官方模型菜单「推理等级」行（`button[role="menuitem"]` + label/value span）与 `modelDirectories` 服务，结构变化时静默降级 |
 | 新建会话页按钮 | 依赖官方 `conversation.hero.options` 席位、标题栏官方「展开右侧面板」按钮（`[data-sidebar-right-expand]`，及其所在的 `[data-conversation-header-corner]` 容器）作为锚点，以及宿主路由 `GET /open-in-app/apps`、`POST /open-in-app/open`；任一缺失即静默不渲染。按钮是 `document.body` 上的固定定位节点，不依赖角落容器的排版 |
-| 通用设置开关 | 依赖官方 `settings.general.item` 席位与官方 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch`（原语缺失时退回自绘开关）；席位不存在时 4 行开关不出现，其余功能照常 |
+| 通用设置开关 | 依赖官方 `settings.general.item` 席位与官方 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch`（原语缺失时退回自绘开关）；席位不存在时 6 行开关不出现，其余功能照常 |
+| mermaid 图表 | 依赖官方 `conversation.chat.markdown.fence` hoc 席位与 `require.async` chunk 投递（`/plugins/<id>/client.*.js?rev=`）；席位或 chunk 路由缺失时静默保留官方代码块。渲染在浏览器本地完成，不联网 |
 | 浏览器 | 现代 Chrome / Safari / Edge |
 
 ---
@@ -256,7 +338,7 @@ dsh plugin --profile web remove dsh-session-plus
 npm test
 ```
 
-共 **81 项单元测试 + 26 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 26 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
+共 **96 项单元测试 + 40 项浏览器回归测试**。浏览器测试需要验收环境提供 DSH 官方运行时与 Playwright；普通 `npm test` 会跳过这 40 项。启用夹具的命令如下（仅操作临时页面，不调用模型）：
 
 ```bash
 SESSION_PLUS_TEST_RUNTIME="<path-to-extracted-desktop-dsh>" \
@@ -282,13 +364,17 @@ node --test test/*.test.mjs
 - **账户菜单锚定**：侧上落点、视口夹紧、4px 容差内接受与超出拒绝、插入后自校正
 - **浏览器运行时**：官方模型菜单、实时目录更新、多会话隔离、卸载清理
 - **主题切换（真实 Menu 原语）**：注入位置与面板贴合、点击只写一次且菜单不关、拖拽单次落定、方向键与焦点、关闭清理与重开回显、外部改主题跟随、减弱动效直接落位、其它弹层不误注入
+- **账户行齿轮 / 语言行（离线）**：语言快照清洗（缺 id / 缺原生名 / 非法值一律丢弃且保持官方顺序）、导航下标按 order 稳定排序（同 order 保持注册序）、收起态判定
+- **账户行齿轮 / 语言行（真实 DOM）**：齿轮常驻且带官方图标、点击经外壳 store 句柄直达「通用设置」、store 不可用时退化为菜单「设置」项、收起态隐藏与恢复、语言行紧贴「设置」上方并显示当前语言原生名、浮层列出全部语言且勾选当前、选完只收浮层而菜单保持打开、两个开关关闭后各自即时消失、主题三态条改显官方图标且保留无障碍名称
 - **推理等级滑条（离线台）**：注入进官方那一行（内距 / 折行 / 高度，官方 span 与 chevron 保留）、档位映射与滞回吸附、能量与粒子数学、运动引擎收敛且无过冲、写回契约（单次提交、参数正确、同档去重）、失败回滚与行内提示、关菜单逐项还原、关菜单时 fail-open、座席着色、本地化回退
 - **推理等级滑条（真实 ModelSelect）**：滑条铺满官方行的第二行、拖到最右端只写一次 `max` 且菜单保持打开、关闭后行内样式还原、键盘 End / ArrowLeft 切换并写回、右键不弹出任何设置面板（含拦截 document 上同类监听）、模型没有推理档位时不注入
 - **功能开关（离线）**：默认全开、`localStorage` 读写与回读、损坏 JSON / 非对象 / 非法值容错、隐私模式写入失败容错、未知 id 忽略、订阅去重与退订、`reset` 重读、设置行 order 与中英文案键完整性
 - **在应用中打开（离线）**：三个宿主路由常量、请求体与失败返回、应用目录只读一次与空列表 / 非 2xx / 断网降级、偏好继承（自有键优先、官方键裸字符串与 JSON 两种写法）、应用名回退、四条可见性条件真值表、面板展开判定的服务与 DOM 双通道、按钮簇落点几何（最左侧 8px 间距 / 跨行按钮忽略 / 极窄窗口贴边 / 锚点或尺寸缺失返回 null）
 - **在应用中打开（真实 DOM）**：空会话页出现且固定定位在整组按钮最左侧（`dsh-better-sidebar` / `dsh-awesome-hud` 站位块在右侧且不重叠、8px 间距、垂直居中）、邻居按钮消失后重新贴齐、发出消息后卸载且不残留宿主节点、右侧面板展开隐藏 / 收起恢复、主按钮请求体正确、应用菜单切换并写入偏好、失败提示自动消失
-- **功能开关（真实 DOM）**：4 行开关落在官方上传行之后且顺序稳定，开关复用官方 `Switch` 且与官方参照件的计算样式逐项一致；关闭提供商头部 / 推理滑条 / 主题三态条 / 新会话按钮后即时移除，重新开启即时恢复（含滑条关闭后官方行的行高、折行、内边距逐项还原）
-- **浏览器半区注册面**：`conversation.input.overlay` 一条 + `conversation.input.right` 一条 + `conversation.hero.options` 一条 + `settings.general.item` 四行注册、六十二个词典键、样式 effect、模型服务 / 主题服务缺失时的降级；并守护 v0.8.0 下线的选文插入功能（注册点、文案键、样式类）不得复活
+- **mermaid 图表（离线）**：门控真值表（关开关 / 流式 / 空代码块 / 非字符串）、主题 token 到 `themeVariables` 的映射与空值回落、主题指纹、SVG 清洗（去脚本 / 事件属性 / `javascript:`、补 `xmlns`）、下载文件名、缓存键与容量裁剪、错误摘要压缩与截断
+- **mermaid 图表（真实 DOM）**：流式期间透出代码块且不加载 chunk、结束后替换为 SVG、chunk 单例复用、图表 / 源码来回切换、复制写入剪贴板并短暂提示、语法错误与 chunk 失败回落代码块并提示、主题变化清缓存重绘、关开关后回到代码块且不再加载 chunk
+- **功能开关（真实 DOM）**：7 行开关落在官方上传行之后、官方「更新渠道」行之前且顺序稳定，开关复用官方 `Switch` 且与官方参照件的计算样式逐项一致；关闭提供商头部 / 推理滑条 / 主题三态条 / 新会话按钮 / 齿轮 / 语言行 / mermaid 图表后即时移除，重新开启即时恢复（含滑条关闭后官方行的行高、折行、内边距逐项还原）
+- **浏览器半区注册面**：`conversation.input.overlay` 一条 + `conversation.input.right` 一条 + `conversation.hero.options` 一条 + `conversation.chat.markdown.fence`（key=`mermaid`）一条 + `settings.general.item` 七行注册、85 个词典键、样式 effect、模型服务 / 主题服务缺失时的降级；并守护 v0.8.0 下线的选文插入功能（注册点、文案键、样式类）不得复活
 
 ---
 
@@ -297,11 +383,16 @@ node --test test/*.test.mjs
 ```text
 dsh-session-plus/
 ├── lib/
-│   ├── client.js        # 浏览器半区：提供商头部 + 主题切换 + 推理滑条 + 新会话打开按钮 + 开关面板（单 bundle）
+│   ├── client.js        # 浏览器半区：提供商头部 + 主题切换 + 推理滑条 + 新会话打开按钮 + 设置齿轮 + 语言行 + 开关面板（单 bundle）
 │   ├── index.js         # 宿主半区：刻意保留的空 apply（让浏览器半区被 dsh-client-modules 发现）
 │   ├── label.js         # 提供商名解析纯函数（可单测）
 │   ├── rubber.js        # Rubber Segment 几何与动效数学（可单测）
-│   └── account-menu.js  # 账户菜单落点识别纯几何（可单测）
+│   ├── account-menu.js  # 账户菜单落点识别纯几何（可单测）
+│   ├── account-extras.js # 账户行齿轮与语言行的纯逻辑镜像（语言快照清洗 / 导航下标 / 收起态，可单测）
+│   ├── mermaid.js       # mermaid 门控 / 主题映射 / SVG 清洗 / 缓存裁剪纯函数（可单测）
+│   └── client.mermaid-11.17.2.js # mermaid 11.17.2 懒加载 chunk（构建产物，勿手改）
+├── scripts/
+│   └── build-mermaid-chunk.mjs # 从 npm 包重建 chunk（sha256 校验 + MIT 头注释）
 ├── test/                # 单元测试与官方前端浏览器夹具
 ├── cordis.patch.yml
 ├── CHANGELOG.md
@@ -316,11 +407,12 @@ dsh-session-plus/
 
 | 类别 | 技术 |
 |---|---|
-| 运行时 | DeepSeek Harness（DSH `0.2.1-rc.3`）· Cordis 插件系统 |
+| 运行时 | DeepSeek Harness（DSH `0.2.2-rc.5`）· Cordis 插件系统 |
 | 语言 | 原生 JavaScript（ESM，无构建步骤） |
 | 浏览器侧 | DSH client runtime（`@deepseek-ai/dsh-client-*`），单 bundle 注入 |
 | 宿主侧 | 无运行时依赖：空 `apply` 宿主行，保留它是为了让浏览器半区被 `dsh-client-modules` 发现 |
 | 样式 | DSH 主题变量（`--dsw-alias-*`），客户端生命周期内挂载并清理样式 |
+| 图表 | mermaid `11.17.2`（MIT，独立懒加载 chunk，`securityLevel: strict`） |
 | 测试 | Node 内置测试运行器（`node --test`） |
 
 ---
@@ -334,6 +426,9 @@ dsh-session-plus/
 - [x] 推理等级滑条（迁自 `dsh-codex-effort-slider`：连续跟手、一档一色、最高档能量层）
 - [x] 新建会话页「在应用中打开」按钮（同款分体按钮、固定定位在按钮组最左且不与其它插件叠压、面板互斥、偏好继承）
 - [x] 通用设置逐项开关（复用官方 `Switch`、即时生效、原生回退、`localStorage` 持久化）
+- [x] 侧栏账户行设置齿轮（官方图标、一键直达通用设置、三级打开兜底、收起态隐藏）
+- [x] 账户菜单语言切换（官方 locale 快照、原生语言名、勾选浮层、菜单保持打开）
+- [x] mermaid 流程图自动渲染（官方 fence 席位、11.17.2 懒加载 chunk、源码 / 复制 / 下载 SVG、主题跟随、失败回落）
 - [x] 移除「选中文本 → 添加至对话」（v0.8.0，按产品决定下线：悬浮按钮、代码块插入、设置行与单测一并删除）
 
 ---
@@ -346,6 +441,8 @@ dsh-session-plus/
 
 - 「推理等级滑条」迁移自 MIT 许可的 `dsh-codex-effort-slider`；
 - 「新建会话页按钮」的视觉参数、按钮文案与 34 个应用显示名镜像自 MIT 许可的官方包 `@deepseek-ai/dsh-client-ui-open-in-app`（未复制其代码，仅复用其宿主 HTTP 路由契约）；
-- 「设置 → 通用」开关在运行时直接复用 MIT 许可的官方原语 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch`（未复制代码），仅在旧运行时退回自绘开关，其兜底 CSS 几何参数参考官方 `Switch.module.css`。
+- 「设置 → 通用」开关在运行时直接复用 MIT 许可的官方原语 `@deepseek-ai/dsh-client-ui-primitives` 的 `Switch`（未复制代码），仅在旧运行时退回自绘开关，其兜底 CSS 几何参数参考官方 `Switch.module.css`；
+- 「设置齿轮 / 语言行 / 主题三态条」的图标按符号 id 引用 DSH 官方图标精灵（未复制图标路径数据），仅在精灵缺失时退回本插件自绘的同形 SVG；
+- 「mermaid 图表」内置 MIT 许可的 `mermaid@11.17.2` 构建产物（`dist/mermaid.min.js`，`Copyright (c) 2014 - 2022 Knut Sveidqvist`），由 `scripts/build-mermaid-chunk.mjs` 按 sha256 校验后原样包进 chunk，未修改其代码。
 
 第三方版权声明与改动范围见 [NOTICE.md](NOTICE.md)。
